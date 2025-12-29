@@ -277,6 +277,35 @@
                     </div>
                 </div>
 
+                <!-- Gemini AI Section -->
+                <div class="bg-gradient-to-br from-purple-900/20 to-indigo-900/20 border border-purple-500/20 p-4 md:p-5 rounded-xl">
+                    <h3 class="text-xs font-bold text-purple-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <span>✨</span> AI Sprite Generation
+                    </h3>
+
+                    <!-- API Key Input -->
+                    <div class="mb-3">
+                        <label class="block text-[10px] font-medium text-slate-400 mb-1">Gemini API Key</label>
+                        <div class="flex gap-2">
+                            <input type="password" id="geminiApiKey" placeholder="Enter your API key..."
+                                class="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                onchange="saveApiKey()">
+                            <button onclick="toggleApiKeyVisibility()" class="px-2 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300 transition-colors">
+                                <span id="apiKeyToggle">👁️</span>
+                            </button>
+                        </div>
+                        <p class="text-[9px] text-slate-500 mt-1">Get your key at <a href="https://aistudio.google.com/apikey" target="_blank" class="text-purple-400 hover:text-purple-300 underline">aistudio.google.com</a></p>
+                    </div>
+
+                    <!-- Generate Button -->
+                    <button onclick="generateWithGemini()" id="generateAiBtn"
+                        class="w-full px-3 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed rounded-lg text-[11px] font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20">
+                        <span id="generateAiIcon">🎨</span>
+                        <span id="generateAiText">Generate Sprite with AI</span>
+                    </button>
+                    <p class="text-[9px] text-slate-500 mt-2 text-center">Uses Gemini 2.0 Flash to create a sprite sheet based on your character settings</p>
+                </div>
+
                 <!-- Sprite Import Section -->
                 <div class="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-4 md:p-5 rounded-xl">
                     <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Import Sprite Sheet</h3>
@@ -543,6 +572,10 @@
         // ==================== STATE ====================
         const STORAGE_KEY_HEROES = 'forge_hall_of_heroes';
         const STORAGE_KEY_CURRENT = 'forge_current_character';
+        const STORAGE_KEY_API = 'forge_gemini_api_key';
+
+        // Gemini API configuration
+        const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
 
         let currentCharacter = {
             id: generateId(),
@@ -1367,6 +1400,173 @@
             }
         }
 
+        // ==================== GEMINI AI ====================
+        function saveApiKey() {
+            const key = document.getElementById('geminiApiKey').value;
+            if (key) {
+                localStorage.setItem(STORAGE_KEY_API, key);
+                showToast('API key saved');
+            }
+        }
+
+        function loadApiKey() {
+            const key = localStorage.getItem(STORAGE_KEY_API);
+            if (key) {
+                document.getElementById('geminiApiKey').value = key;
+            }
+        }
+
+        function toggleApiKeyVisibility() {
+            const input = document.getElementById('geminiApiKey');
+            const toggle = document.getElementById('apiKeyToggle');
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                toggle.textContent = '👁️';
+            }
+        }
+
+        async function generateWithGemini() {
+            const apiKey = document.getElementById('geminiApiKey').value;
+            if (!apiKey) {
+                showToast('Please enter your Gemini API key');
+                return;
+            }
+
+            // Update UI to loading state
+            const btn = document.getElementById('generateAiBtn');
+            const icon = document.getElementById('generateAiIcon');
+            const text = document.getElementById('generateAiText');
+            btn.disabled = true;
+            icon.textContent = '⏳';
+            text.textContent = 'Generating...';
+
+            try {
+                // Build the prompt based on character settings
+                const prompt = buildSpritePrompt();
+
+                // Call Gemini API
+                const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{ text: prompt }]
+                        }],
+                        generationConfig: {
+                            responseModalities: ["image", "text"],
+                            responseMimeType: "text/plain"
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || 'API request failed');
+                }
+
+                const data = await response.json();
+
+                // Extract image from response
+                const parts = data.candidates?.[0]?.content?.parts || [];
+                let imageData = null;
+
+                for (const part of parts) {
+                    if (part.inlineData) {
+                        imageData = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                        break;
+                    }
+                }
+
+                if (imageData) {
+                    // Load the generated image as sprite
+                    const img = new Image();
+                    img.onload = () => {
+                        importedSprite.image = img;
+                        importedSprite.dataUrl = imageData;
+                        importedSprite.cols = 4;
+                        importedSprite.rows = 4;
+                        importedSprite.frameWidth = Math.floor(img.width / 4);
+                        importedSprite.frameHeight = Math.floor(img.height / 4);
+
+                        // Update UI
+                        document.getElementById('spriteIndicator').className = 'w-2 h-2 rounded-full bg-emerald-500';
+                        document.getElementById('spriteStatusText').textContent = `AI Sprite (${img.width}x${img.height})`;
+                        document.getElementById('clearSpriteBtn').classList.remove('hidden');
+                        document.getElementById('spriteConfig').classList.remove('hidden');
+                        document.getElementById('spriteCols').value = 4;
+                        document.getElementById('spriteRows').value = 4;
+                        document.getElementById('spriteInfo').textContent = `Frame size: ${importedSprite.frameWidth}x${importedSprite.frameHeight}`;
+                        document.getElementById('assetsStatus').textContent = 'Assets: AI Generated';
+
+                        // Save to character
+                        currentCharacter.spriteData = imageData;
+                        currentCharacter.spriteCols = 4;
+                        currentCharacter.spriteRows = 4;
+                        localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCharacter));
+
+                        drawPreview();
+                        showToast('AI sprite generated successfully!');
+                    };
+                    img.onerror = () => {
+                        showToast('Failed to load generated image');
+                    };
+                    img.src = imageData;
+                } else {
+                    showToast('No image in response. Try again.');
+                }
+            } catch (error) {
+                console.error('Gemini API error:', error);
+                showToast('Error: ' + error.message);
+            } finally {
+                // Reset button state
+                btn.disabled = false;
+                icon.textContent = '🎨';
+                text.textContent = 'Generate Sprite with AI';
+            }
+        }
+
+        function buildSpritePrompt() {
+            const char = currentCharacter;
+
+            // Build a detailed prompt for sprite generation
+            const prompt = `Create a pixel art sprite sheet for a 2D game character with the following specifications:
+
+CHARACTER DETAILS:
+- Name: ${char.name}
+- Gender: ${char.gender}
+- Class: ${char.className}
+- Body Type: ${char.body}
+- Hair Style: ${char.hairStyle}
+- Hair Color: ${char.hairColor}
+- Skin Tone: ${char.skinColor}
+- Outfit: ${char.outfit}
+- Primary Color: ${char.outfitColor1}
+- Secondary Color: ${char.outfitColor2}
+- Accessory: ${char.accessory !== 'none' ? char.accessory : 'none'}
+
+SPRITE SHEET FORMAT:
+- Create a 4x4 grid sprite sheet (16 frames total)
+- Each frame should be equal size
+- Use a transparent or solid dark background
+- Retro 16-bit pixel art style similar to Vampire Survivors or Chrono Trigger
+- Sharp, clean pixels with good contrast
+
+ANIMATION ROWS (top to bottom):
+- Row 1: Idle animation (4 frames) - subtle breathing/movement
+- Row 2: Walk/Run animation (4 frames) - walking cycle
+- Row 3: Attack animation (4 frames) - combat action
+- Row 4: Special/Cast animation (4 frames) - magical or special ability
+
+The character should face right in all frames. Make the sprite detailed but readable at small sizes. Use the specified colors for the outfit and match the character's class aesthetic (${char.className}).`;
+
+            return prompt;
+        }
+
         // ==================== ANIMATION ====================
         function toggleViewMode(mode) {
             viewMode = mode;
@@ -1403,6 +1603,9 @@
 
         // ==================== INITIALIZATION ====================
         function init() {
+            // Load saved API key
+            loadApiKey();
+
             // Load saved data
             const savedCurrent = localStorage.getItem(STORAGE_KEY_CURRENT);
             if (savedCurrent) {

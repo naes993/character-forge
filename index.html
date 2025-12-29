@@ -107,7 +107,7 @@
                     </div>
                     <div>
                         <h1 class="font-pixel text-[10px] tracking-tight text-white">CHARACTER FORGE</h1>
-                        <p class="text-[10px] text-slate-500 font-medium uppercase">Sprite Architect v1.0</p>
+                        <p class="text-[10px] text-slate-500 font-medium uppercase">Portrait Mode v2.0</p>
                     </div>
                 </div>
 
@@ -280,80 +280,42 @@
                 <!-- Gemini AI Section -->
                 <div class="bg-gradient-to-br from-purple-900/20 to-indigo-900/20 border border-purple-500/20 p-4 md:p-5 rounded-xl">
                     <h3 class="text-xs font-bold text-purple-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                        <span>✨</span> AI Sprite Generation
+                        <span>✨</span> AI Portrait Generation
                     </h3>
-
-                    <!-- API Key Input -->
-                    <div class="mb-3">
-                        <label class="block text-[10px] font-medium text-slate-400 mb-1">Gemini API Key</label>
-                        <div class="flex gap-2">
-                            <input type="password" id="geminiApiKey" placeholder="Enter your API key..."
-                                class="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                onchange="saveApiKey()">
-                            <button onclick="toggleApiKeyVisibility()" class="px-2 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300 transition-colors">
-                                <span id="apiKeyToggle">👁️</span>
-                            </button>
-                        </div>
-                        <p class="text-[9px] text-slate-500 mt-1">Get your key at <a href="https://aistudio.google.com/apikey" target="_blank" class="text-purple-400 hover:text-purple-300 underline">aistudio.google.com</a></p>
-                    </div>
 
                     <!-- Generate Button -->
                     <button onclick="generateWithGemini()" id="generateAiBtn"
                         class="w-full px-3 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed rounded-lg text-[11px] font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20">
                         <span id="generateAiIcon">🎨</span>
-                        <span id="generateAiText">Generate Sprite with AI</span>
+                        <span id="generateAiText">Generate Portrait with AI</span>
                     </button>
-                    <p class="text-[9px] text-slate-500 mt-2 text-center">Uses Gemini 2.0 Flash to create a sprite sheet based on your character settings</p>
+                    <p class="text-[9px] text-slate-500 mt-2 text-center">Creates a single portrait image, animated programmatically for smooth movement</p>
                 </div>
 
-                <!-- Sprite Import Section -->
+                <!-- Portrait Import Section -->
                 <div class="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-4 md:p-5 rounded-xl">
-                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Import Sprite Sheet</h3>
-                    <p class="text-[10px] text-slate-500 mb-3">Upload a PNG sprite sheet to use instead of generated graphics. Works with Gemini-created sprites or existing game assets.</p>
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Import Portrait</h3>
+                    <p class="text-[10px] text-slate-500 mb-3">Upload a PNG portrait image. Animation will be applied automatically.</p>
 
-                    <!-- Current Sprite Status -->
-                    <div id="spriteStatus" class="mb-3 p-2 rounded-lg bg-slate-800/50 border border-slate-700">
+                    <!-- Current Portrait Status -->
+                    <div id="portraitStatus" class="mb-3 p-2 rounded-lg bg-slate-800/50 border border-slate-700">
                         <div class="flex items-center gap-2">
-                            <div id="spriteIndicator" class="w-2 h-2 rounded-full bg-slate-500"></div>
-                            <span id="spriteStatusText" class="text-[10px] text-slate-400">No sprite imported</span>
+                            <div id="portraitIndicator" class="w-2 h-2 rounded-full bg-slate-500"></div>
+                            <span id="portraitStatusText" class="text-[10px] text-slate-400">No portrait imported</span>
                         </div>
                     </div>
 
                     <!-- Import Button -->
                     <div class="flex gap-2">
-                        <button onclick="document.getElementById('spriteImport').click()"
+                        <button onclick="document.getElementById('portraitImport').click()"
                             class="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-[10px] font-bold text-white transition-colors flex items-center justify-center gap-1">
                             <span>📁</span> Import PNG
                         </button>
-                        <button onclick="clearImportedSprite()" id="clearSpriteBtn"
+                        <button onclick="clearImportedPortrait()" id="clearPortraitBtn"
                             class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-[10px] font-bold text-slate-300 transition-colors hidden">
                             Clear
                         </button>
-                        <input type="file" id="spriteImport" accept="image/png" onchange="importSprite(event)" class="hidden">
-                    </div>
-
-                    <!-- Sprite Configuration (shown when sprite is imported) -->
-                    <div id="spriteConfig" class="hidden mt-3 pt-3 border-t border-slate-700 space-y-3">
-                        <div>
-                            <label class="block text-[10px] font-medium text-slate-400 mb-1">Grid Layout</label>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <span class="text-[9px] text-slate-500">Columns</span>
-                                    <input type="number" id="spriteCols" value="4" min="1" max="16"
-                                        class="w-full bg-slate-800 border border-slate-600 text-white rounded px-2 py-1 text-xs"
-                                        onchange="updateSpriteConfig()">
-                                </div>
-                                <div>
-                                    <span class="text-[9px] text-slate-500">Rows</span>
-                                    <input type="number" id="spriteRows" value="4" min="1" max="16"
-                                        class="w-full bg-slate-800 border border-slate-600 text-white rounded px-2 py-1 text-xs"
-                                        onchange="updateSpriteConfig()">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="text-[9px] text-slate-500">
-                            <span id="spriteInfo">Frame size: calculating...</span>
-                        </div>
+                        <input type="file" id="portraitImport" accept="image/png,image/jpeg,image/webp" onchange="importPortrait(event)" class="hidden">
                     </div>
                 </div>
 
@@ -410,14 +372,6 @@
                         <h2 class="text-sm font-bold flex items-center gap-2">
                             <span class="text-emerald-400">👁️</span> Live Preview
                         </h2>
-                        <div class="flex gap-2">
-                            <button id="btnAnimate" onclick="toggleViewMode('animate')" class="px-3 py-1 rounded-lg text-[10px] font-bold border bg-indigo-600 border-indigo-500 text-white">
-                                ANIMATE
-                            </button>
-                            <button id="btnGrid" onclick="toggleViewMode('grid')" class="px-3 py-1 rounded-lg text-[10px] font-bold border bg-slate-800 border-slate-700 text-slate-400 hover:text-white">
-                                GRID
-                            </button>
-                        </div>
                     </div>
 
                     <!-- Preview Card -->
@@ -430,20 +384,19 @@
                             <div id="animControls" class="absolute top-4 right-4 flex flex-col gap-2 items-end">
                                 <div class="bg-slate-900/90 backdrop-blur-sm border border-slate-700 rounded-lg p-2">
                                     <label class="text-[9px] text-slate-500 font-bold uppercase block mb-1">Animation</label>
-                                    <select id="animRow" onchange="setAnimationRow()"
+                                    <select id="animType" onchange="setAnimationType()"
                                         class="bg-slate-800 border border-slate-600 text-white rounded px-2 py-1 text-[10px]">
-                                        <option value="0">Idle</option>
-                                        <option value="1">Walk</option>
-                                        <option value="2">Ranged Attack</option>
-                                        <option value="3">Melee Attack</option>
-                                        <option value="4">Hurt</option>
-                                        <option value="5">Special</option>
+                                        <option value="idle">Idle (Breathing)</option>
+                                        <option value="walk">Walk (Bobbing)</option>
+                                        <option value="attack">Attack (Shake)</option>
+                                        <option value="hurt">Hurt (Flash)</option>
+                                        <option value="special">Special (Glow)</option>
                                     </select>
                                 </div>
                                 <div class="bg-slate-900/90 backdrop-blur-sm border border-slate-700 rounded-lg p-2">
-                                    <label class="text-[9px] text-slate-500 font-bold uppercase block mb-1">FPS: <span id="fpsValue">8</span></label>
-                                    <input type="range" id="fpsSlider" min="2" max="24" value="8"
-                                        class="w-20 accent-indigo-500" onchange="setFps()">
+                                    <label class="text-[9px] text-slate-500 font-bold uppercase block mb-1">Speed: <span id="speedLabel">1.0x</span></label>
+                                    <input type="range" id="animSpeed" min="0.5" max="3" step="0.1" value="1"
+                                        class="w-20 accent-indigo-500" onchange="setAnimSpeed()">
                                 </div>
                             </div>
 
@@ -505,7 +458,7 @@
 
                     <!-- Push to Game Section -->
                     <div class="mt-4 bg-slate-900/50 border border-slate-800 rounded-xl p-4">
-                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Push to Game</h3>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Export for Game</h3>
                         <div class="flex gap-2">
                             <select id="targetGame" class="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm">
                                 <option value="house-survivors">House Survivors</option>
@@ -515,7 +468,7 @@
                                 Export
                             </button>
                         </div>
-                        <p class="text-[10px] text-slate-500 mt-2">Downloads sprite sheet + config for the selected game format.</p>
+                        <p class="text-[10px] text-slate-500 mt-2">Downloads portrait + config for the selected game.</p>
                     </div>
                 </div>
             </div>
@@ -559,7 +512,7 @@
         <!-- Footer -->
         <footer class="border-t border-slate-800 py-4 mt-8 bg-slate-900/30">
             <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-2 text-slate-500 text-[10px] font-medium tracking-widest uppercase">
-                <p>Character Forge - Sprite Architect</p>
+                <p>Character Forge - Portrait Mode</p>
                 <div class="flex gap-4">
                     <span>Storage: LocalDB</span>
                     <span id="assetsStatus">Assets: Placeholder Mode</span>
@@ -572,10 +525,10 @@
         // ==================== STATE ====================
         const STORAGE_KEY_HEROES = 'forge_hall_of_heroes';
         const STORAGE_KEY_CURRENT = 'forge_current_character';
-        const STORAGE_KEY_API = 'forge_gemini_api_key';
 
         // Gemini API configuration
         const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+        const GEMINI_API_KEY = 'AIzaSyCR2-1Mx1oKWFeHur2LyNwL2dArPFV-wGs';
 
         let currentCharacter = {
             id: generateId(),
@@ -597,55 +550,14 @@
         };
 
         let savedHeroes = [];
-        let viewMode = 'animate';
-        let animationRow = 0;
-        let currentFrame = 0;
-        let fps = 8;
+        let animationType = 'idle';
+        let animSpeed = 1;
+        let animationTime = 0;
         let animationTimer = null;
 
-        // Imported sprite sheet
-        let importedSprite = {
-            image: null,
-            dataUrl: null,
-            cols: 4,
-            rows: 4,
-            frameWidth: 0,
-            frameHeight: 0
-        };
-
-        // Layer assets (will be loaded when available)
-        const layers = {
-            bodies: {},
-            hair: {},
-            outfits: {},
-            accessories: {}
-        };
-
-        // Game export configurations
-        const GAME_CONFIGS = {
-            'house-survivors': {
-                name: 'House Survivors',
-                animations: {
-                    idle: { sourceRow: 0, targetRow: 3 },
-                    walk: { sourceRow: 1, targetRow: 0 },
-                    shoot: { sourceRow: 2, targetRow: 1 },
-                    aim_up: { sourceRow: 2, targetRow: 2 }
-                },
-                frameSize: 256,
-                outputRows: 4,
-                outputCols: 4
-            },
-            'merge-td': {
-                name: 'Merge Tower Defense',
-                animations: {
-                    idle: { sourceRow: 0, targetRow: 0 },
-                    attack: { sourceRow: 3, targetRow: 1 }
-                },
-                frameSize: 128,
-                outputRows: 2,
-                outputCols: 4
-            }
-        };
+        // Portrait image (single image, not sprite sheet)
+        let portraitImage = null;
+        let portraitDataUrl = null;
 
         // ==================== UTILITIES ====================
         function generateId() {
@@ -733,7 +645,10 @@
                 abilityDesc: '',
                 createdAt: Date.now()
             };
+            portraitImage = null;
+            portraitDataUrl = null;
             loadCharacterToForm(currentCharacter);
+            updatePortraitUI(false);
             showToast('New character created');
         }
 
@@ -774,18 +689,21 @@
             currentCharacter = { ...char };
             localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCharacter));
 
-            // Load sprite if character has one
-            loadSpriteFromCharacter(char);
+            // Load portrait if character has one
+            loadPortraitFromCharacter(char);
 
             drawPreview();
         }
 
         // ==================== HALL OF HEROES ====================
         function saveToHall() {
-            // Update character data before saving
             updateCharacter();
 
-            // Check if already exists
+            // Save portrait data
+            if (portraitDataUrl) {
+                currentCharacter.portraitData = portraitDataUrl;
+            }
+
             const existingIndex = savedHeroes.findIndex(h => h.id === currentCharacter.id);
             if (existingIndex >= 0) {
                 savedHeroes[existingIndex] = { ...currentCharacter };
@@ -835,9 +753,9 @@
             container.innerHTML = savedHeroes.map(hero => `
                 <div onclick="loadHero('${hero.id}')"
                     class="bg-slate-900/50 border ${currentCharacter.id === hero.id ? 'border-indigo-500 bg-indigo-500/5' : 'border-slate-800 hover:border-slate-600'} p-3 rounded-xl flex gap-3 cursor-pointer transition-all group relative">
-                    <div class="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 border border-slate-700 flex items-center justify-center pixelated" style="background: linear-gradient(135deg, ${hero.skinColor}40, ${hero.outfitColor1}40)">
-                        ${hero.spriteData
-                            ? `<img src="${hero.spriteData}" class="w-full h-full object-cover pixelated" style="object-position: 0 0;">`
+                    <div class="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 border border-slate-700 flex items-center justify-center" style="background: linear-gradient(135deg, ${hero.skinColor}40, ${hero.outfitColor1}40)">
+                        ${hero.portraitData
+                            ? `<img src="${hero.portraitData}" class="w-full h-full object-cover">`
                             : `<span class="text-2xl">${getClassEmoji(hero.className)}</span>`
                         }
                     </div>
@@ -930,76 +848,41 @@
 
         function pushToGame() {
             const gameKey = document.getElementById('targetGame').value;
-            const config = GAME_CONFIGS[gameKey];
 
-            // Create export canvas
-            const exportCanvas = document.createElement('canvas');
-            const size = config.frameSize * config.outputCols;
-            exportCanvas.width = size;
-            exportCanvas.height = config.frameSize * config.outputRows;
-            const exportCtx = exportCanvas.getContext('2d');
+            if (portraitImage) {
+                // Export the portrait image
+                const exportCanvas = document.createElement('canvas');
+                exportCanvas.width = portraitImage.width;
+                exportCanvas.height = portraitImage.height;
+                const exportCtx = exportCanvas.getContext('2d');
+                exportCtx.drawImage(portraitImage, 0, 0);
 
-            if (importedSprite.image) {
-                // Use imported sprite - remap animations to game format
-                Object.entries(config.animations).forEach(([animName, animConfig]) => {
-                    const sourceRow = Math.min(animConfig.sourceRow, importedSprite.rows - 1);
-                    for (let col = 0; col < config.outputCols; col++) {
-                        const sourceCol = col % importedSprite.cols;
-                        const sx = sourceCol * importedSprite.frameWidth;
-                        const sy = sourceRow * importedSprite.frameHeight;
-                        const dx = col * config.frameSize;
-                        const dy = animConfig.targetRow * config.frameSize;
-
-                        exportCtx.drawImage(
-                            importedSprite.image,
-                            sx, sy, importedSprite.frameWidth, importedSprite.frameHeight,
-                            dx, dy, config.frameSize, config.frameSize
-                        );
-                    }
-                });
-            } else {
-                // Draw placeholder frames for each animation row
-                Object.entries(config.animations).forEach(([animName, animConfig]) => {
-                    for (let col = 0; col < config.outputCols; col++) {
-                        const x = col * config.frameSize;
-                        const y = animConfig.targetRow * config.frameSize;
-                        drawPlaceholderFrame(exportCtx, x, y, config.frameSize, animConfig.sourceRow, col);
-                    }
+                exportCanvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${currentCharacter.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_portrait.png`;
+                    link.click();
+                    URL.revokeObjectURL(url);
                 });
             }
 
-            const canvas = exportCanvas;
-            const ctx = exportCtx;
-
-            // Download sprite sheet
-            canvas.toBlob((blob) => {
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `${currentCharacter.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${gameKey}.png`;
-                link.click();
-                URL.revokeObjectURL(url);
-            });
-
-            // Also download config
-            const spriteConfig = {
+            // Export config with animation settings
+            const config = {
                 character: currentCharacter.name,
-                game: config.name,
-                frameWidth: config.frameSize,
-                frameHeight: config.frameSize,
-                scale: 0.25,
-                animations: {}
+                game: gameKey,
+                animationType: 'programmatic',
+                stats: currentCharacter.stats,
+                animations: {
+                    idle: { type: 'breathe', amplitude: 3, speed: 1 },
+                    walk: { type: 'bob', amplitude: 8, speed: 2 },
+                    attack: { type: 'shake', amplitude: 5, speed: 4 },
+                    hurt: { type: 'flash', color: '#ff0000', duration: 200 },
+                    special: { type: 'glow', color: currentCharacter.outfitColor1, pulse: true }
+                }
             };
 
-            Object.entries(config.animations).forEach(([animName, animConfig]) => {
-                spriteConfig.animations[animName] = {
-                    row: animConfig.targetRow,
-                    frames: config.outputCols,
-                    speed: 0.12
-                };
-            });
-
-            const configBlob = new Blob([JSON.stringify(spriteConfig, null, 2)], { type: 'application/json' });
+            const configBlob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
             const configUrl = URL.createObjectURL(configBlob);
             const configLink = document.createElement('a');
             configLink.href = configUrl;
@@ -1009,7 +892,7 @@
                 URL.revokeObjectURL(configUrl);
             }, 100);
 
-            showToast(`Exported for ${config.name}`);
+            showToast(`Exported for ${gameKey}`);
         }
 
         // ==================== CANVAS RENDERING ====================
@@ -1019,170 +902,183 @@
         function drawPreview() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            if (viewMode === 'grid') {
-                drawGridView();
-            } else {
-                drawAnimatedFrame();
-            }
-        }
+            // Calculate animation transforms
+            const transforms = getAnimationTransforms();
 
-        function drawGridView() {
-            if (importedSprite.image) {
-                // Draw imported sprite grid
-                const cols = importedSprite.cols;
-                const rows = importedSprite.rows;
-                const displayFrameW = canvas.width / cols;
-                const displayFrameH = canvas.height / rows;
+            ctx.save();
 
-                for (let row = 0; row < rows; row++) {
-                    for (let col = 0; col < cols; col++) {
-                        const sx = col * importedSprite.frameWidth;
-                        const sy = row * importedSprite.frameHeight;
-                        const dx = col * displayFrameW;
-                        const dy = row * displayFrameH;
+            // Apply transforms based on animation type
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.translate(transforms.offsetX, transforms.offsetY);
+            ctx.scale(transforms.scaleX, transforms.scaleY);
+            ctx.rotate(transforms.rotation);
+            ctx.translate(-canvas.width / 2, -canvas.height / 2);
 
-                        ctx.drawImage(
-                            importedSprite.image,
-                            sx, sy, importedSprite.frameWidth, importedSprite.frameHeight,
-                            dx, dy, displayFrameW, displayFrameH
-                        );
-                    }
-                }
-            } else {
-                // Draw placeholder grid
-                const frameSize = 85;
-                const cols = 4;
-                const rows = 6;
-
-                for (let row = 0; row < rows; row++) {
-                    for (let col = 0; col < cols; col++) {
-                        const x = col * (canvas.width / cols);
-                        const y = row * (canvas.height / rows);
-                        drawPlaceholderFrame(ctx, x, y, canvas.width / cols, row, col);
-                    }
-                }
-            }
-        }
-
-        function drawAnimatedFrame() {
-            if (importedSprite.image) {
-                // Draw imported sprite frame
-                const col = currentFrame % importedSprite.cols;
-                const row = Math.min(animationRow, importedSprite.rows - 1);
-
-                const sx = col * importedSprite.frameWidth;
-                const sy = row * importedSprite.frameHeight;
-
-                // Calculate display size (fit in canvas with some padding)
+            if (portraitImage) {
+                // Draw imported portrait with animation
                 const maxSize = 400;
-                const scale = Math.min(maxSize / importedSprite.frameWidth, maxSize / importedSprite.frameHeight);
-                const displayW = importedSprite.frameWidth * scale;
-                const displayH = importedSprite.frameHeight * scale;
+                const scale = Math.min(maxSize / portraitImage.width, maxSize / portraitImage.height);
+                const displayW = portraitImage.width * scale;
+                const displayH = portraitImage.height * scale;
                 const dx = (canvas.width - displayW) / 2;
                 const dy = (canvas.height - displayH) / 2;
 
-                ctx.drawImage(
-                    importedSprite.image,
-                    sx, sy, importedSprite.frameWidth, importedSprite.frameHeight,
-                    dx, dy, displayW, displayH
-                );
+                // Apply effects based on animation
+                if (transforms.flash) {
+                    ctx.fillStyle = transforms.flashColor;
+                    ctx.globalAlpha = transforms.flashAlpha;
+                    ctx.fillRect(dx, dy, displayW, displayH);
+                    ctx.globalAlpha = 1;
+                }
+
+                ctx.drawImage(portraitImage, dx, dy, displayW, displayH);
+
+                // Glow effect
+                if (transforms.glow) {
+                    ctx.shadowColor = transforms.glowColor;
+                    ctx.shadowBlur = transforms.glowSize;
+                    ctx.drawImage(portraitImage, dx, dy, displayW, displayH);
+                    ctx.shadowBlur = 0;
+                }
             } else {
-                // Draw placeholder frame
-                const frameSize = 384;
-                const x = (canvas.width - frameSize) / 2;
-                const y = (canvas.height - frameSize) / 2;
-                drawPlaceholderFrame(ctx, x, y, frameSize, animationRow, currentFrame);
+                // Draw placeholder character
+                drawPlaceholderCharacter(ctx, transforms);
             }
+
+            ctx.restore();
         }
 
-        function drawPlaceholderFrame(ctx, x, y, size, row, frame) {
-            // Draw placeholder character using current colors
-            const centerX = x + size / 2;
-            const centerY = y + size / 2;
-            const scale = size / 256;
+        function getAnimationTransforms() {
+            const t = animationTime * animSpeed;
+            const transforms = {
+                offsetX: 0,
+                offsetY: 0,
+                scaleX: 1,
+                scaleY: 1,
+                rotation: 0,
+                flash: false,
+                flashColor: '#ff0000',
+                flashAlpha: 0,
+                glow: false,
+                glowColor: currentCharacter.outfitColor1,
+                glowSize: 0
+            };
 
-            // Animation offset based on frame
-            const bounceOffset = Math.sin(frame * Math.PI / 2) * 3 * scale;
-            const walkOffset = frame * 2 * scale;
+            switch (animationType) {
+                case 'idle':
+                    // Subtle breathing animation
+                    transforms.scaleY = 1 + Math.sin(t * 2) * 0.02;
+                    transforms.offsetY = Math.sin(t * 2) * 2;
+                    break;
 
-            ctx.save();
+                case 'walk':
+                    // Bobbing walk animation
+                    transforms.offsetY = Math.abs(Math.sin(t * 6)) * -12;
+                    transforms.offsetX = Math.sin(t * 3) * 3;
+                    transforms.rotation = Math.sin(t * 6) * 0.03;
+                    break;
+
+                case 'attack':
+                    // Shake/thrust animation
+                    const attackPhase = (t * 4) % (Math.PI * 2);
+                    if (attackPhase < Math.PI) {
+                        transforms.offsetX = Math.sin(attackPhase * 3) * 15;
+                        transforms.scaleX = 1 + Math.sin(attackPhase) * 0.1;
+                    }
+                    transforms.rotation = Math.sin(t * 8) * 0.05;
+                    break;
+
+                case 'hurt':
+                    // Flash red and shake
+                    transforms.flash = true;
+                    transforms.flashAlpha = Math.abs(Math.sin(t * 10)) * 0.4;
+                    transforms.offsetX = Math.sin(t * 20) * 8;
+                    transforms.offsetY = Math.sin(t * 15) * 4;
+                    break;
+
+                case 'special':
+                    // Glowing pulse effect
+                    transforms.glow = true;
+                    transforms.glowSize = 20 + Math.sin(t * 3) * 15;
+                    transforms.scaleX = 1 + Math.sin(t * 2) * 0.05;
+                    transforms.scaleY = 1 + Math.sin(t * 2) * 0.05;
+                    transforms.offsetY = Math.sin(t * 2) * -5;
+                    break;
+            }
+
+            return transforms;
+        }
+
+        function drawPlaceholderCharacter(ctx, transforms) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const scale = 1.5;
 
             // Body
             ctx.fillStyle = currentCharacter.skinColor;
             const bodyWidth = getBodyWidth(currentCharacter.body) * scale;
             const bodyHeight = 60 * scale;
 
-            // Legs (animated for walk)
-            if (row === 1) { // Walk animation
-                ctx.fillRect(centerX - 15 * scale + walkOffset, centerY + 20 * scale, 12 * scale, 40 * scale);
-                ctx.fillRect(centerX + 3 * scale - walkOffset, centerY + 20 * scale, 12 * scale, 40 * scale);
-            } else {
-                ctx.fillRect(centerX - 15 * scale, centerY + 20 * scale, 12 * scale, 40 * scale);
-                ctx.fillRect(centerX + 3 * scale, centerY + 20 * scale, 12 * scale, 40 * scale);
-            }
+            // Legs
+            ctx.fillRect(centerX - 15 * scale, centerY + 20 * scale, 12 * scale, 40 * scale);
+            ctx.fillRect(centerX + 3 * scale, centerY + 20 * scale, 12 * scale, 40 * scale);
 
             // Body/Outfit
             ctx.fillStyle = currentCharacter.outfitColor1;
-            ctx.fillRect(centerX - bodyWidth / 2, centerY - 30 * scale - bounceOffset, bodyWidth, bodyHeight);
+            ctx.fillRect(centerX - bodyWidth / 2, centerY - 30 * scale, bodyWidth, bodyHeight);
 
             // Secondary color detail
             ctx.fillStyle = currentCharacter.outfitColor2;
-            ctx.fillRect(centerX - bodyWidth / 2 + 5 * scale, centerY - 20 * scale - bounceOffset, bodyWidth - 10 * scale, 20 * scale);
+            ctx.fillRect(centerX - bodyWidth / 2 + 5 * scale, centerY - 20 * scale, bodyWidth - 10 * scale, 20 * scale);
 
             // Head
             ctx.fillStyle = currentCharacter.skinColor;
             ctx.beginPath();
-            ctx.arc(centerX, centerY - 50 * scale - bounceOffset, 25 * scale, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY - 50 * scale, 25 * scale, 0, Math.PI * 2);
             ctx.fill();
 
             // Hair
             if (currentCharacter.hairStyle !== 'bald') {
                 ctx.fillStyle = currentCharacter.hairColor;
-                drawHair(ctx, centerX, centerY - 50 * scale - bounceOffset, 25 * scale, currentCharacter.hairStyle);
+                drawHair(ctx, centerX, centerY - 50 * scale, 25 * scale, currentCharacter.hairStyle);
             }
 
-            // Arms (animated for attack)
+            // Arms
             ctx.fillStyle = currentCharacter.skinColor;
-            if (row === 2 || row === 3) { // Attack animations
-                const armAngle = frame * 0.5;
-                ctx.save();
-                ctx.translate(centerX + bodyWidth / 2, centerY - 15 * scale - bounceOffset);
-                ctx.rotate(armAngle - 0.5);
-                ctx.fillRect(0, -5 * scale, 35 * scale, 10 * scale);
-                ctx.restore();
-            } else {
-                ctx.fillRect(centerX - bodyWidth / 2 - 10 * scale, centerY - 20 * scale - bounceOffset, 10 * scale, 35 * scale);
-                ctx.fillRect(centerX + bodyWidth / 2, centerY - 20 * scale - bounceOffset, 10 * scale, 35 * scale);
-            }
+            ctx.fillRect(centerX - bodyWidth / 2 - 10 * scale, centerY - 20 * scale, 10 * scale, 35 * scale);
+            ctx.fillRect(centerX + bodyWidth / 2, centerY - 20 * scale, 10 * scale, 35 * scale);
 
             // Eyes
             ctx.fillStyle = '#000';
             ctx.beginPath();
-            ctx.arc(centerX - 8 * scale, centerY - 52 * scale - bounceOffset, 3 * scale, 0, Math.PI * 2);
-            ctx.arc(centerX + 8 * scale, centerY - 52 * scale - bounceOffset, 3 * scale, 0, Math.PI * 2);
+            ctx.arc(centerX - 8 * scale, centerY - 52 * scale, 3 * scale, 0, Math.PI * 2);
+            ctx.arc(centerX + 8 * scale, centerY - 52 * scale, 3 * scale, 0, Math.PI * 2);
             ctx.fill();
 
             // Accessory
             if (currentCharacter.accessory !== 'none') {
-                drawAccessory(ctx, centerX, centerY - bounceOffset, scale, currentCharacter.accessory);
+                drawAccessory(ctx, centerX, centerY, scale, currentCharacter.accessory);
             }
 
-            // Hurt effect
-            if (row === 4) {
-                ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-                ctx.fillRect(x, y, size, size);
-            }
-
-            // Special effect
-            if (row === 5) {
-                ctx.strokeStyle = currentCharacter.outfitColor1;
-                ctx.lineWidth = 3 * scale;
+            // Glow effect for special
+            if (transforms.glow) {
+                ctx.strokeStyle = transforms.glowColor;
+                ctx.lineWidth = 4;
+                ctx.shadowColor = transforms.glowColor;
+                ctx.shadowBlur = transforms.glowSize;
                 ctx.beginPath();
-                ctx.arc(centerX, centerY - 20 * scale, 50 * scale + frame * 5 * scale, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY - 20 * scale, 80 * scale, 0, Math.PI * 2);
                 ctx.stroke();
+                ctx.shadowBlur = 0;
             }
 
-            ctx.restore();
+            // Flash effect for hurt
+            if (transforms.flash) {
+                ctx.fillStyle = transforms.flashColor;
+                ctx.globalAlpha = transforms.flashAlpha;
+                ctx.fillRect(centerX - 60 * scale, centerY - 100 * scale, 120 * scale, 180 * scale);
+                ctx.globalAlpha = 1;
+            }
         }
 
         function getBodyWidth(bodyType) {
@@ -1286,8 +1182,8 @@
             ctx.restore();
         }
 
-        // ==================== SPRITE IMPORT ====================
-        function importSprite(event) {
+        // ==================== PORTRAIT IMPORT ====================
+        function importPortrait(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -1295,27 +1191,17 @@
             reader.onload = (e) => {
                 const img = new Image();
                 img.onload = () => {
-                    importedSprite.image = img;
-                    importedSprite.dataUrl = e.target.result;
-                    importedSprite.frameWidth = Math.floor(img.width / importedSprite.cols);
-                    importedSprite.frameHeight = Math.floor(img.height / importedSprite.rows);
+                    portraitImage = img;
+                    portraitDataUrl = e.target.result;
 
-                    // Update UI
-                    document.getElementById('spriteIndicator').className = 'w-2 h-2 rounded-full bg-emerald-500';
-                    document.getElementById('spriteStatusText').textContent = `Sprite loaded (${img.width}x${img.height})`;
-                    document.getElementById('clearSpriteBtn').classList.remove('hidden');
-                    document.getElementById('spriteConfig').classList.remove('hidden');
-                    document.getElementById('spriteInfo').textContent = `Frame size: ${importedSprite.frameWidth}x${importedSprite.frameHeight}`;
-                    document.getElementById('assetsStatus').textContent = 'Assets: Custom Sprite';
+                    updatePortraitUI(true, img.width, img.height);
 
                     // Save to character
-                    currentCharacter.spriteData = e.target.result;
-                    currentCharacter.spriteCols = importedSprite.cols;
-                    currentCharacter.spriteRows = importedSprite.rows;
+                    currentCharacter.portraitData = e.target.result;
                     localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCharacter));
 
                     drawPreview();
-                    showToast('Sprite imported successfully');
+                    showToast('Portrait imported successfully');
                 };
                 img.src = e.target.result;
             };
@@ -1323,119 +1209,58 @@
             event.target.value = '';
         }
 
-        function clearImportedSprite() {
-            importedSprite.image = null;
-            importedSprite.dataUrl = null;
-            importedSprite.frameWidth = 0;
-            importedSprite.frameHeight = 0;
+        function clearImportedPortrait() {
+            portraitImage = null;
+            portraitDataUrl = null;
 
-            // Update UI
-            document.getElementById('spriteIndicator').className = 'w-2 h-2 rounded-full bg-slate-500';
-            document.getElementById('spriteStatusText').textContent = 'No sprite imported';
-            document.getElementById('clearSpriteBtn').classList.add('hidden');
-            document.getElementById('spriteConfig').classList.add('hidden');
-            document.getElementById('assetsStatus').textContent = 'Assets: Placeholder Mode';
+            updatePortraitUI(false);
 
             // Clear from character
-            delete currentCharacter.spriteData;
-            delete currentCharacter.spriteCols;
-            delete currentCharacter.spriteRows;
+            delete currentCharacter.portraitData;
             localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCharacter));
 
             drawPreview();
-            showToast('Sprite cleared');
+            showToast('Portrait cleared');
         }
 
-        function updateSpriteConfig() {
-            importedSprite.cols = parseInt(document.getElementById('spriteCols').value) || 4;
-            importedSprite.rows = parseInt(document.getElementById('spriteRows').value) || 4;
-
-            if (importedSprite.image) {
-                importedSprite.frameWidth = Math.floor(importedSprite.image.width / importedSprite.cols);
-                importedSprite.frameHeight = Math.floor(importedSprite.image.height / importedSprite.rows);
-                document.getElementById('spriteInfo').textContent = `Frame size: ${importedSprite.frameWidth}x${importedSprite.frameHeight}`;
-
-                // Save to character
-                currentCharacter.spriteCols = importedSprite.cols;
-                currentCharacter.spriteRows = importedSprite.rows;
-                localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCharacter));
-
-                drawPreview();
-            }
+        function updatePortraitUI(hasPortrait, width = 0, height = 0) {
+            document.getElementById('portraitIndicator').className = hasPortrait
+                ? 'w-2 h-2 rounded-full bg-emerald-500'
+                : 'w-2 h-2 rounded-full bg-slate-500';
+            document.getElementById('portraitStatusText').textContent = hasPortrait
+                ? `Portrait loaded (${width}x${height})`
+                : 'No portrait imported';
+            document.getElementById('clearPortraitBtn').classList.toggle('hidden', !hasPortrait);
+            document.getElementById('assetsStatus').textContent = hasPortrait
+                ? 'Assets: AI Portrait'
+                : 'Assets: Placeholder Mode';
         }
 
-        function loadSpriteFromCharacter(char) {
-            if (char.spriteData) {
+        function loadPortraitFromCharacter(char) {
+            if (char.portraitData) {
                 const img = new Image();
                 img.onload = () => {
-                    importedSprite.image = img;
-                    importedSprite.dataUrl = char.spriteData;
-                    importedSprite.cols = char.spriteCols || 4;
-                    importedSprite.rows = char.spriteRows || 4;
-                    importedSprite.frameWidth = Math.floor(img.width / importedSprite.cols);
-                    importedSprite.frameHeight = Math.floor(img.height / importedSprite.rows);
-
-                    // Update UI
-                    document.getElementById('spriteIndicator').className = 'w-2 h-2 rounded-full bg-emerald-500';
-                    document.getElementById('spriteStatusText').textContent = `Sprite loaded (${img.width}x${img.height})`;
-                    document.getElementById('clearSpriteBtn').classList.remove('hidden');
-                    document.getElementById('spriteConfig').classList.remove('hidden');
-                    document.getElementById('spriteCols').value = importedSprite.cols;
-                    document.getElementById('spriteRows').value = importedSprite.rows;
-                    document.getElementById('spriteInfo').textContent = `Frame size: ${importedSprite.frameWidth}x${importedSprite.frameHeight}`;
-                    document.getElementById('assetsStatus').textContent = 'Assets: Custom Sprite';
-
+                    portraitImage = img;
+                    portraitDataUrl = char.portraitData;
+                    updatePortraitUI(true, img.width, img.height);
                     drawPreview();
                 };
-                img.src = char.spriteData;
+                img.src = char.portraitData;
             } else {
-                // Clear sprite UI if character has no sprite
-                importedSprite.image = null;
-                importedSprite.dataUrl = null;
-                document.getElementById('spriteIndicator').className = 'w-2 h-2 rounded-full bg-slate-500';
-                document.getElementById('spriteStatusText').textContent = 'No sprite imported';
-                document.getElementById('clearSpriteBtn').classList.add('hidden');
-                document.getElementById('spriteConfig').classList.add('hidden');
-                document.getElementById('assetsStatus').textContent = 'Assets: Placeholder Mode';
+                portraitImage = null;
+                portraitDataUrl = null;
+                updatePortraitUI(false);
             }
         }
 
         // ==================== GEMINI AI ====================
-        function saveApiKey() {
-            const key = document.getElementById('geminiApiKey').value;
-            if (key) {
-                localStorage.setItem(STORAGE_KEY_API, key);
-                showToast('API key saved');
-            }
-        }
-
-        function loadApiKey() {
-            const key = localStorage.getItem(STORAGE_KEY_API);
-            if (key) {
-                document.getElementById('geminiApiKey').value = key;
-            }
-        }
-
-        function toggleApiKeyVisibility() {
-            const input = document.getElementById('geminiApiKey');
-            const toggle = document.getElementById('apiKeyToggle');
-            if (input.type === 'password') {
-                input.type = 'text';
-                toggle.textContent = '🙈';
-            } else {
-                input.type = 'password';
-                toggle.textContent = '👁️';
-            }
-        }
-
         async function generateWithGemini() {
-            const apiKey = document.getElementById('geminiApiKey').value;
+            const apiKey = GEMINI_API_KEY;
             if (!apiKey) {
-                showToast('Please enter your Gemini API key');
+                showToast('API key not configured');
                 return;
             }
 
-            // Update UI to loading state
             const btn = document.getElementById('generateAiBtn');
             const icon = document.getElementById('generateAiIcon');
             const text = document.getElementById('generateAiText');
@@ -1444,10 +1269,8 @@
             text.textContent = 'Generating...';
 
             try {
-                // Build the prompt based on character settings
-                const prompt = buildSpritePrompt();
+                const prompt = buildPortraitPrompt();
 
-                // Call Gemini API
                 const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
                     method: 'POST',
                     headers: {
@@ -1470,8 +1293,6 @@
                 }
 
                 const data = await response.json();
-
-                // Extract image from response
                 const parts = data.candidates?.[0]?.content?.parts || [];
                 let imageData = null;
 
@@ -1483,34 +1304,18 @@
                 }
 
                 if (imageData) {
-                    // Load the generated image as sprite
                     const img = new Image();
                     img.onload = () => {
-                        importedSprite.image = img;
-                        importedSprite.dataUrl = imageData;
-                        importedSprite.cols = 4;
-                        importedSprite.rows = 4;
-                        importedSprite.frameWidth = Math.floor(img.width / 4);
-                        importedSprite.frameHeight = Math.floor(img.height / 4);
+                        portraitImage = img;
+                        portraitDataUrl = imageData;
 
-                        // Update UI
-                        document.getElementById('spriteIndicator').className = 'w-2 h-2 rounded-full bg-emerald-500';
-                        document.getElementById('spriteStatusText').textContent = `AI Sprite (${img.width}x${img.height})`;
-                        document.getElementById('clearSpriteBtn').classList.remove('hidden');
-                        document.getElementById('spriteConfig').classList.remove('hidden');
-                        document.getElementById('spriteCols').value = 4;
-                        document.getElementById('spriteRows').value = 4;
-                        document.getElementById('spriteInfo').textContent = `Frame size: ${importedSprite.frameWidth}x${importedSprite.frameHeight}`;
-                        document.getElementById('assetsStatus').textContent = 'Assets: AI Generated';
+                        updatePortraitUI(true, img.width, img.height);
 
-                        // Save to character
-                        currentCharacter.spriteData = imageData;
-                        currentCharacter.spriteCols = 4;
-                        currentCharacter.spriteRows = 4;
+                        currentCharacter.portraitData = imageData;
                         localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCharacter));
 
                         drawPreview();
-                        showToast('AI sprite generated successfully!');
+                        showToast('AI portrait generated!');
                     };
                     img.onerror = () => {
                         showToast('Failed to load generated image');
@@ -1523,96 +1328,70 @@
                 console.error('Gemini API error:', error);
                 showToast('Error: ' + error.message);
             } finally {
-                // Reset button state
                 btn.disabled = false;
                 icon.textContent = '🎨';
-                text.textContent = 'Generate Sprite with AI';
+                text.textContent = 'Generate Portrait with AI';
             }
         }
 
-        function buildSpritePrompt() {
+        function buildPortraitPrompt() {
             const char = currentCharacter;
 
-            // Build a detailed prompt for sprite generation
-            const prompt = `Create a pixel art sprite sheet for a 2D game character with the following specifications:
+            return `Create a single pixel art character portrait for a 2D game. Full body view, facing slightly to the right.
 
 CHARACTER DETAILS:
 - Name: ${char.name}
 - Gender: ${char.gender}
-- Class: ${char.className}
+- Class: ${char.className} (design should reflect this class)
 - Body Type: ${char.body}
 - Hair Style: ${char.hairStyle}
 - Hair Color: ${char.hairColor}
 - Skin Tone: ${char.skinColor}
 - Outfit: ${char.outfit}
-- Primary Color: ${char.outfitColor1}
-- Secondary Color: ${char.outfitColor2}
+- Primary Outfit Color: ${char.outfitColor1}
+- Secondary Outfit Color: ${char.outfitColor2}
 - Accessory: ${char.accessory !== 'none' ? char.accessory : 'none'}
 
-SPRITE SHEET FORMAT:
-- Create a 4x4 grid sprite sheet (16 frames total)
-- Each frame should be equal size
-- Use a transparent or solid dark background
-- Retro 16-bit pixel art style similar to Vampire Survivors or Chrono Trigger
+STYLE REQUIREMENTS:
+- Pixel art style, 16-bit retro aesthetic like Vampire Survivors or Chrono Trigger
+- Single standing pose (NOT a sprite sheet - just ONE image)
+- Full body visible from head to feet
+- Dark/transparent background
 - Sharp, clean pixels with good contrast
+- Character should look ready for action
+- Make it visually interesting with details matching the ${char.className} class
 
-ANIMATION ROWS (top to bottom):
-- Row 1: Idle animation (4 frames) - subtle breathing/movement
-- Row 2: Walk/Run animation (4 frames) - walking cycle
-- Row 3: Attack animation (4 frames) - combat action
-- Row 4: Special/Cast animation (4 frames) - magical or special ability
-
-The character should face right in all frames. Make the sprite detailed but readable at small sizes. Use the specified colors for the outfit and match the character's class aesthetic (${char.className}).`;
-
-            return prompt;
+The image will be animated programmatically, so make it a clean static pose.`;
         }
 
         // ==================== ANIMATION ====================
-        function toggleViewMode(mode) {
-            viewMode = mode;
-            document.getElementById('btnAnimate').className = mode === 'animate'
-                ? 'px-3 py-1 rounded-lg text-[10px] font-bold border bg-indigo-600 border-indigo-500 text-white'
-                : 'px-3 py-1 rounded-lg text-[10px] font-bold border bg-slate-800 border-slate-700 text-slate-400 hover:text-white';
-            document.getElementById('btnGrid').className = mode === 'grid'
-                ? 'px-3 py-1 rounded-lg text-[10px] font-bold border bg-indigo-600 border-indigo-500 text-white'
-                : 'px-3 py-1 rounded-lg text-[10px] font-bold border bg-slate-800 border-slate-700 text-slate-400 hover:text-white';
-            document.getElementById('animControls').style.display = mode === 'animate' ? 'flex' : 'none';
-            drawPreview();
+        function setAnimationType() {
+            animationType = document.getElementById('animType').value;
         }
 
-        function setAnimationRow() {
-            animationRow = parseInt(document.getElementById('animRow').value);
-            currentFrame = 0;
-        }
-
-        function setFps() {
-            fps = parseInt(document.getElementById('fpsSlider').value);
-            document.getElementById('fpsValue').textContent = fps;
-            startAnimation();
+        function setAnimSpeed() {
+            animSpeed = parseFloat(document.getElementById('animSpeed').value);
+            document.getElementById('speedLabel').textContent = animSpeed.toFixed(1) + 'x';
         }
 
         function startAnimation() {
-            if (animationTimer) clearInterval(animationTimer);
-            animationTimer = setInterval(() => {
-                currentFrame = (currentFrame + 1) % 4;
-                if (viewMode === 'animate') {
-                    drawPreview();
-                }
-            }, 1000 / fps);
+            if (animationTimer) cancelAnimationFrame(animationTimer);
+
+            function animate() {
+                animationTime += 0.016; // ~60fps
+                drawPreview();
+                animationTimer = requestAnimationFrame(animate);
+            }
+            animate();
         }
 
         // ==================== INITIALIZATION ====================
         function init() {
-            // Load saved API key
-            loadApiKey();
-
-            // Load saved data
             const savedCurrent = localStorage.getItem(STORAGE_KEY_CURRENT);
             if (savedCurrent) {
                 try {
                     currentCharacter = JSON.parse(savedCurrent);
                     loadCharacterToForm(currentCharacter);
-                    // loadCharacterToForm already calls loadSpriteFromCharacter
                 } catch (e) {
                     console.error('Failed to load current character:', e);
                 }

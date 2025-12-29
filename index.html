@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Character Forge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f1f5f9;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .font-pixel {
+            font-family: 'Press Start 2P', cursive;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        /* Pixel art rendering */
+        .pixelated {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        /* Color picker styling */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid #334155;
+            border-radius: 6px;
+        }
+        /* Range slider styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            background: transparent;
+            width: 100%;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 6px;
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #6366f1;
+            margin-top: -5px;
+            cursor: pointer;
+        }
+        /* Canvas container */
+        #previewCanvas {
+            background: #020617;
+            border-radius: 8px;
+        }
+        /* Toast animation */
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .toast-enter {
+            animation: slideUp 0.3s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-950">
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none"></div>
+
+    <!-- Main App -->
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-xl font-bold shadow-lg shadow-indigo-500/20">
+                        <span class="font-pixel text-xs">CF</span>
+                    </div>
+                    <div>
+                        <h1 class="font-pixel text-[10px] tracking-tight text-white">CHARACTER FORGE</h1>
+                        <p class="text-[10px] text-slate-500 font-medium uppercase">Sprite Architect v1.0</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 md:gap-4">
+                    <button onclick="createNewCharacter()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-[10px] font-bold text-slate-200 transition-colors">
+                        + NEW
+                    </button>
+                    <button onclick="exportCharacter()" class="hidden md:flex px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-[10px] font-bold text-white transition-colors items-center gap-1">
+                        <span>💾</span> EXPORT
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 max-w-7xl mx-auto w-full p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 items-start">
+
+            <!-- Left Column - Configuration -->
+            <div class="lg:col-span-3 space-y-4">
+                <div class="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-4 md:p-5 rounded-xl">
+                    <h2 class="text-sm font-bold mb-4 flex items-center gap-2">
+                        <span class="text-indigo-400">⚒️</span> Configuration
+                    </h2>
+
+                    <!-- Basic Info -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5">Character Name</label>
+                            <input type="text" id="charName" value="New Hero"
+                                class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                                onchange="updateCharacter()">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-400 mb-1.5">Gender</label>
+                                <select id="charGender" onchange="updateCharacter()"
+                                    class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-400 mb-1.5">Class</label>
+                                <select id="charClass" onchange="updateCharacter()"
+                                    class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="Warrior">Warrior</option>
+                                    <option value="Mage">Mage</option>
+                                    <option value="Rogue">Rogue</option>
+                                    <option value="Paladin">Paladin</option>
+                                    <option value="Necromancer">Necromancer</option>
+                                    <option value="Engineer">Engineer</option>
+                                    <option value="Sniper">Sniper</option>
+                                    <option value="Alchemist">Alchemist</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appearance Section -->
+                <div class="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-4 md:p-5 rounded-xl">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Appearance</h3>
+
+                    <div class="space-y-4">
+                        <!-- Body Type -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5">Body Type</label>
+                            <select id="bodyType" onchange="updateCharacter()"
+                                class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="athletic">Athletic</option>
+                                <option value="slim">Slim</option>
+                                <option value="bulky">Bulky</option>
+                                <option value="petite">Petite</option>
+                            </select>
+                        </div>
+
+                        <!-- Skin Tone -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5">Skin Tone</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="skinColor" value="#e0ac69" onchange="updateCharacter()">
+                                <div class="flex gap-1">
+                                    <button onclick="setSkinColor('#f5d0c5')" class="w-6 h-6 rounded-full border-2 border-slate-600 hover:border-indigo-400" style="background:#f5d0c5"></button>
+                                    <button onclick="setSkinColor('#e0ac69')" class="w-6 h-6 rounded-full border-2 border-slate-600 hover:border-indigo-400" style="background:#e0ac69"></button>
+                                    <button onclick="setSkinColor('#c68642')" class="w-6 h-6 rounded-full border-2 border-slate-600 hover:border-indigo-400" style="background:#c68642"></button>
+                                    <button onclick="setSkinColor('#8d5524')" class="w-6 h-6 rounded-full border-2 border-slate-600 hover:border-indigo-400" style="background:#8d5524"></button>
+                                    <button onclick="setSkinColor('#4a3728')" class="w-6 h-6 rounded-full border-2 border-slate-600 hover:border-indigo-400" style="background:#4a3728"></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hair Style -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5">Hair Style</label>
+                            <select id="hairStyle" onchange="updateCharacter()"
+                                class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="short">Short</option>
+                                <option value="long">Long Flowing</option>
+                                <option value="spiky">Spiky</option>
+                                <option value="ponytail">Ponytail</option>
+                                <option value="bald">Bald</option>
+                                <option value="hooded">Hooded</option>
+                            </select>
+                        </div>
+
+                        <!-- Hair Color -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5">Hair Color</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="hairColor" value="#4a3728" onchange="updateCharacter()">
+                                <div class="flex gap-1">
+                                    <button onclick="setHairColor('#1a1a1a')" class="w-6 h-6 rounded-full border-2 border-slate-600 hover:border-indigo-400" style="background:#1a1a1a"></button>
+                                    <button onclick="setHairColor('#4a3728')" class="w-6 h-6 rounded-full border-2 border-slate-600 hover:border-indigo-400" style="background:#4a3728"></button>
+                                    <button onclick="setHairColor('#c4a35a')" class="w-6 h-6 rounded-full border-2 border-slate-600 hover:border-indigo-400" style="background:#c4a35a"></button>
+                                    <button onclick="setHairColor('#ff6b35')" class="w-6 h-6 rounded-full border-2 border-slate-600 hover:border-indigo-400" style="background:#ff6b35"></button>
+                                    <button onclick="setHairColor('#8b5cf6')" class="w-6 h-6 rounded-full border-2 border-slate-600 hover:border-indigo-400" style="background:#8b5cf6"></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Outfit -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5">Outfit</label>
+                            <select id="outfit" onchange="updateCharacter()"
+                                class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="pajamas">Pajamas</option>
+                                <option value="knight">Knight Armor</option>
+                                <option value="ninja">Ninja Suit</option>
+                                <option value="army">Army Fatigues</option>
+                                <option value="superhero">Superhero Suit</option>
+                                <option value="robot">Robot Armor</option>
+                                <option value="wizard">Wizard Robes</option>
+                                <option value="casual">Casual Clothes</option>
+                            </select>
+                        </div>
+
+                        <!-- Outfit Colors -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5">Outfit Colors</label>
+                            <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-1">
+                                    <span class="text-[10px] text-slate-500">Primary</span>
+                                    <input type="color" id="outfitColor1" value="#6366f1" onchange="updateCharacter()">
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-[10px] text-slate-500">Secondary</span>
+                                    <input type="color" id="outfitColor2" value="#1e1b4b" onchange="updateCharacter()">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Accessory -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5">Accessory</label>
+                            <select id="accessory" onchange="updateCharacter()"
+                                class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="none">None</option>
+                                <option value="cape">Cape</option>
+                                <option value="helmet">Helmet</option>
+                                <option value="aura">Glowing Aura</option>
+                                <option value="eyepatch">Eye Patch</option>
+                                <option value="shoulder_armor">Shoulder Armor</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sprite Import Section -->
+                <div class="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-4 md:p-5 rounded-xl">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Import Sprite Sheet</h3>
+                    <p class="text-[10px] text-slate-500 mb-3">Upload a PNG sprite sheet to use instead of generated graphics. Works with Gemini-created sprites or existing game assets.</p>
+
+                    <!-- Current Sprite Status -->
+                    <div id="spriteStatus" class="mb-3 p-2 rounded-lg bg-slate-800/50 border border-slate-700">
+                        <div class="flex items-center gap-2">
+                            <div id="spriteIndicator" class="w-2 h-2 rounded-full bg-slate-500"></div>
+                            <span id="spriteStatusText" class="text-[10px] text-slate-400">No sprite imported</span>
+                        </div>
+                    </div>
+
+                    <!-- Import Button -->
+                    <div class="flex gap-2">
+                        <button onclick="document.getElementById('spriteImport').click()"
+                            class="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-[10px] font-bold text-white transition-colors flex items-center justify-center gap-1">
+                            <span>📁</span> Import PNG
+                        </button>
+                        <button onclick="clearImportedSprite()" id="clearSpriteBtn"
+                            class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-[10px] font-bold text-slate-300 transition-colors hidden">
+                            Clear
+                        </button>
+                        <input type="file" id="spriteImport" accept="image/png" onchange="importSprite(event)" class="hidden">
+                    </div>
+
+                    <!-- Sprite Configuration (shown when sprite is imported) -->
+                    <div id="spriteConfig" class="hidden mt-3 pt-3 border-t border-slate-700 space-y-3">
+                        <div>
+                            <label class="block text-[10px] font-medium text-slate-400 mb-1">Grid Layout</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <span class="text-[9px] text-slate-500">Columns</span>
+                                    <input type="number" id="spriteCols" value="4" min="1" max="16"
+                                        class="w-full bg-slate-800 border border-slate-600 text-white rounded px-2 py-1 text-xs"
+                                        onchange="updateSpriteConfig()">
+                                </div>
+                                <div>
+                                    <span class="text-[9px] text-slate-500">Rows</span>
+                                    <input type="number" id="spriteRows" value="4" min="1" max="16"
+                                        class="w-full bg-slate-800 border border-slate-600 text-white rounded px-2 py-1 text-xs"
+                                        onchange="updateSpriteConfig()">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-[9px] text-slate-500">
+                            <span id="spriteInfo">Frame size: calculating...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Section -->
+                <div class="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-4 md:p-5 rounded-xl">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Base Stats</h3>
+
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-red-400">HP</span>
+                                <span id="hpValue" class="text-slate-400">100%</span>
+                            </div>
+                            <input type="range" id="statHp" min="50" max="200" value="100"
+                                class="accent-red-500" onchange="updateStat('hp')">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-blue-400">Speed</span>
+                                <span id="speedValue" class="text-slate-400">100%</span>
+                            </div>
+                            <input type="range" id="statSpeed" min="50" max="200" value="100"
+                                class="accent-blue-500" onchange="updateStat('speed')">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-orange-400">Damage</span>
+                                <span id="damageValue" class="text-slate-400">100%</span>
+                            </div>
+                            <input type="range" id="statDamage" min="50" max="200" value="100"
+                                class="accent-orange-500" onchange="updateStat('damage')">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-green-400">Defense</span>
+                                <span id="defenseValue" class="text-slate-400">100%</span>
+                            </div>
+                            <input type="range" id="statDefense" min="50" max="200" value="100"
+                                class="accent-green-500" onchange="updateStat('defense')">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Button -->
+                <button onclick="saveToHall()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 text-sm">
+                    <span>💾</span> Save to Hall of Heroes
+                </button>
+            </div>
+
+            <!-- Center Column - Preview -->
+            <div class="lg:col-span-5">
+                <div class="sticky top-20">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-sm font-bold flex items-center gap-2">
+                            <span class="text-emerald-400">👁️</span> Live Preview
+                        </h2>
+                        <div class="flex gap-2">
+                            <button id="btnAnimate" onclick="toggleViewMode('animate')" class="px-3 py-1 rounded-lg text-[10px] font-bold border bg-indigo-600 border-indigo-500 text-white">
+                                ANIMATE
+                            </button>
+                            <button id="btnGrid" onclick="toggleViewMode('grid')" class="px-3 py-1 rounded-lg text-[10px] font-bold border bg-slate-800 border-slate-700 text-slate-400 hover:text-white">
+                                GRID
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Preview Card -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+                        <!-- Canvas Container -->
+                        <div class="relative aspect-square bg-slate-950 flex items-center justify-center">
+                            <canvas id="previewCanvas" width="512" height="512" class="pixelated max-w-full"></canvas>
+
+                            <!-- Animation Controls Overlay -->
+                            <div id="animControls" class="absolute top-4 right-4 flex flex-col gap-2 items-end">
+                                <div class="bg-slate-900/90 backdrop-blur-sm border border-slate-700 rounded-lg p-2">
+                                    <label class="text-[9px] text-slate-500 font-bold uppercase block mb-1">Animation</label>
+                                    <select id="animRow" onchange="setAnimationRow()"
+                                        class="bg-slate-800 border border-slate-600 text-white rounded px-2 py-1 text-[10px]">
+                                        <option value="0">Idle</option>
+                                        <option value="1">Walk</option>
+                                        <option value="2">Ranged Attack</option>
+                                        <option value="3">Melee Attack</option>
+                                        <option value="4">Hurt</option>
+                                        <option value="5">Special</option>
+                                    </select>
+                                </div>
+                                <div class="bg-slate-900/90 backdrop-blur-sm border border-slate-700 rounded-lg p-2">
+                                    <label class="text-[9px] text-slate-500 font-bold uppercase block mb-1">FPS: <span id="fpsValue">8</span></label>
+                                    <input type="range" id="fpsSlider" min="2" max="24" value="8"
+                                        class="w-20 accent-indigo-500" onchange="setFps()">
+                                </div>
+                            </div>
+
+                            <!-- Character Name Overlay -->
+                            <div class="absolute bottom-4 left-4 right-4 flex justify-between items-end pointer-events-none">
+                                <div>
+                                    <div class="flex gap-1 mb-1">
+                                        <span id="classTag" class="bg-indigo-600 text-[8px] font-bold px-1.5 py-0.5 rounded text-white uppercase tracking-tighter shadow-md">
+                                            Warrior
+                                        </span>
+                                        <span id="bodyTag" class="bg-slate-800/90 text-[8px] font-bold px-1.5 py-0.5 rounded text-slate-400 uppercase tracking-tighter shadow-md">
+                                            Athletic
+                                        </span>
+                                    </div>
+                                    <h3 id="previewName" class="text-xl md:text-2xl font-bold text-white drop-shadow-xl">
+                                        New Hero
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Character Details -->
+                        <div class="p-4 md:p-5 space-y-4">
+                            <!-- Ability Section -->
+                            <div>
+                                <label class="block text-xs font-medium text-slate-400 mb-1.5">Ability Name</label>
+                                <input type="text" id="abilityName" placeholder="e.g., Power Slash"
+                                    class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    onchange="updateCharacter()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-400 mb-1.5">Ability Description</label>
+                                <textarea id="abilityDesc" rows="2" placeholder="Describe what this ability does..."
+                                    class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                                    onchange="updateCharacter()"></textarea>
+                            </div>
+
+                            <!-- Stats Display -->
+                            <div class="grid grid-cols-4 gap-2 pt-3 border-t border-slate-800">
+                                <div class="bg-slate-800/30 border border-slate-800/50 p-2 rounded-lg text-center">
+                                    <div class="text-[9px] text-slate-500 uppercase font-bold">HP</div>
+                                    <div id="displayHp" class="text-sm font-mono text-red-400 font-bold">100%</div>
+                                </div>
+                                <div class="bg-slate-800/30 border border-slate-800/50 p-2 rounded-lg text-center">
+                                    <div class="text-[9px] text-slate-500 uppercase font-bold">Speed</div>
+                                    <div id="displaySpeed" class="text-sm font-mono text-blue-400 font-bold">100%</div>
+                                </div>
+                                <div class="bg-slate-800/30 border border-slate-800/50 p-2 rounded-lg text-center">
+                                    <div class="text-[9px] text-slate-500 uppercase font-bold">Damage</div>
+                                    <div id="displayDamage" class="text-sm font-mono text-orange-400 font-bold">100%</div>
+                                </div>
+                                <div class="bg-slate-800/30 border border-slate-800/50 p-2 rounded-lg text-center">
+                                    <div class="text-[9px] text-slate-500 uppercase font-bold">Defense</div>
+                                    <div id="displayDefense" class="text-sm font-mono text-green-400 font-bold">100%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Push to Game Section -->
+                    <div class="mt-4 bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Push to Game</h3>
+                        <div class="flex gap-2">
+                            <select id="targetGame" class="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm">
+                                <option value="house-survivors">House Survivors</option>
+                                <option value="merge-td">Merge Tower Defense</option>
+                            </select>
+                            <button onclick="pushToGame()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-bold text-white transition-colors">
+                                Export
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-2">Downloads sprite sheet + config for the selected game format.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Hall of Heroes -->
+            <div class="lg:col-span-4 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-sm font-bold flex items-center gap-2">
+                        <span class="text-purple-400">📜</span> Hall of Heroes
+                    </h2>
+                    <span id="heroCount" class="text-[10px] font-mono text-slate-500">0/20</span>
+                </div>
+
+                <!-- Saved Characters List -->
+                <div id="heroList" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                    <!-- Empty State -->
+                    <div id="emptyHall" class="bg-slate-900/30 border border-slate-800 border-dashed rounded-xl p-8 text-center">
+                        <p class="text-slate-600 text-sm italic">The Hall of Heroes is empty. Create and save your first legend!</p>
+                    </div>
+                </div>
+
+                <!-- Import/Export All -->
+                <div class="bg-gradient-to-br from-indigo-900/10 to-purple-900/10 border border-indigo-500/10 p-4 rounded-xl">
+                    <h3 class="text-xs font-bold text-indigo-300 mb-2">💾 Backup & Restore</h3>
+                    <p class="text-[10px] text-indigo-300/60 leading-relaxed mb-3">
+                        Export all your heroes to a JSON file for backup, or import a previous backup.
+                    </p>
+                    <div class="flex gap-2">
+                        <button onclick="exportAllHeroes()" class="flex-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">
+                            Export All
+                        </button>
+                        <button onclick="document.getElementById('importFile').click()" class="flex-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] font-bold text-slate-300 transition-colors">
+                            Import
+                        </button>
+                        <input type="file" id="importFile" accept=".json" onchange="importHeroes(event)" class="hidden">
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="border-t border-slate-800 py-4 mt-8 bg-slate-900/30">
+            <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-2 text-slate-500 text-[10px] font-medium tracking-widest uppercase">
+                <p>Character Forge - Sprite Architect</p>
+                <div class="flex gap-4">
+                    <span>Storage: LocalDB</span>
+                    <span id="assetsStatus">Assets: Placeholder Mode</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // ==================== STATE ====================
+        const STORAGE_KEY_HEROES = 'forge_hall_of_heroes';
+        const STORAGE_KEY_CURRENT = 'forge_current_character';
+
+        let currentCharacter = {
+            id: generateId(),
+            name: 'New Hero',
+            gender: 'Male',
+            className: 'Warrior',
+            body: 'athletic',
+            skinColor: '#e0ac69',
+            hairStyle: 'short',
+            hairColor: '#4a3728',
+            outfit: 'pajamas',
+            outfitColor1: '#6366f1',
+            outfitColor2: '#1e1b4b',
+            accessory: 'none',
+            stats: { hp: 100, speed: 100, damage: 100, defense: 100 },
+            abilityName: '',
+            abilityDesc: '',
+            createdAt: Date.now()
+        };
+
+        let savedHeroes = [];
+        let viewMode = 'animate';
+        let animationRow = 0;
+        let currentFrame = 0;
+        let fps = 8;
+        let animationTimer = null;
+
+        // Imported sprite sheet
+        let importedSprite = {
+            image: null,
+            dataUrl: null,
+            cols: 4,
+            rows: 4,
+            frameWidth: 0,
+            frameHeight: 0
+        };
+
+        // Layer assets (will be loaded when available)
+        const layers = {
+            bodies: {},
+            hair: {},
+            outfits: {},
+            accessories: {}
+        };
+
+        // Game export configurations
+        const GAME_CONFIGS = {
+            'house-survivors': {
+                name: 'House Survivors',
+                animations: {
+                    idle: { sourceRow: 0, targetRow: 3 },
+                    walk: { sourceRow: 1, targetRow: 0 },
+                    shoot: { sourceRow: 2, targetRow: 1 },
+                    aim_up: { sourceRow: 2, targetRow: 2 }
+                },
+                frameSize: 256,
+                outputRows: 4,
+                outputCols: 4
+            },
+            'merge-td': {
+                name: 'Merge Tower Defense',
+                animations: {
+                    idle: { sourceRow: 0, targetRow: 0 },
+                    attack: { sourceRow: 3, targetRow: 1 }
+                },
+                frameSize: 128,
+                outputRows: 2,
+                outputCols: 4
+            }
+        };
+
+        // ==================== UTILITIES ====================
+        function generateId() {
+            return Math.random().toString(36).substr(2, 9);
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-enter bg-slate-900 border border-indigo-500/50 text-white px-5 py-2.5 rounded-full shadow-2xl shadow-indigo-500/20 flex items-center gap-2 backdrop-blur-md pointer-events-auto';
+            toast.innerHTML = `
+                <div class="w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <span class="text-xs font-bold uppercase tracking-wider">${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // ==================== CHARACTER MANAGEMENT ====================
+        function updateCharacter() {
+            currentCharacter.name = document.getElementById('charName').value;
+            currentCharacter.gender = document.getElementById('charGender').value;
+            currentCharacter.className = document.getElementById('charClass').value;
+            currentCharacter.body = document.getElementById('bodyType').value;
+            currentCharacter.skinColor = document.getElementById('skinColor').value;
+            currentCharacter.hairStyle = document.getElementById('hairStyle').value;
+            currentCharacter.hairColor = document.getElementById('hairColor').value;
+            currentCharacter.outfit = document.getElementById('outfit').value;
+            currentCharacter.outfitColor1 = document.getElementById('outfitColor1').value;
+            currentCharacter.outfitColor2 = document.getElementById('outfitColor2').value;
+            currentCharacter.accessory = document.getElementById('accessory').value;
+            currentCharacter.abilityName = document.getElementById('abilityName').value;
+            currentCharacter.abilityDesc = document.getElementById('abilityDesc').value;
+
+            // Update preview elements
+            document.getElementById('previewName').textContent = currentCharacter.name || 'Unnamed Hero';
+            document.getElementById('classTag').textContent = currentCharacter.className;
+            document.getElementById('bodyTag').textContent = currentCharacter.body;
+
+            // Save to localStorage
+            localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCharacter));
+
+            // Redraw
+            drawPreview();
+        }
+
+        function updateStat(stat) {
+            const value = document.getElementById('stat' + stat.charAt(0).toUpperCase() + stat.slice(1)).value;
+            currentCharacter.stats[stat] = parseInt(value);
+
+            document.getElementById(stat + 'Value').textContent = value + '%';
+            document.getElementById('display' + stat.charAt(0).toUpperCase() + stat.slice(1)).textContent = value + '%';
+
+            localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCharacter));
+        }
+
+        function setSkinColor(color) {
+            document.getElementById('skinColor').value = color;
+            updateCharacter();
+        }
+
+        function setHairColor(color) {
+            document.getElementById('hairColor').value = color;
+            updateCharacter();
+        }
+
+        function createNewCharacter() {
+            currentCharacter = {
+                id: generateId(),
+                name: 'New Hero',
+                gender: 'Male',
+                className: 'Warrior',
+                body: 'athletic',
+                skinColor: '#e0ac69',
+                hairStyle: 'short',
+                hairColor: '#4a3728',
+                outfit: 'pajamas',
+                outfitColor1: '#6366f1',
+                outfitColor2: '#1e1b4b',
+                accessory: 'none',
+                stats: { hp: 100, speed: 100, damage: 100, defense: 100 },
+                abilityName: '',
+                abilityDesc: '',
+                createdAt: Date.now()
+            };
+            loadCharacterToForm(currentCharacter);
+            showToast('New character created');
+        }
+
+        function loadCharacterToForm(char) {
+            document.getElementById('charName').value = char.name;
+            document.getElementById('charGender').value = char.gender;
+            document.getElementById('charClass').value = char.className;
+            document.getElementById('bodyType').value = char.body;
+            document.getElementById('skinColor').value = char.skinColor;
+            document.getElementById('hairStyle').value = char.hairStyle;
+            document.getElementById('hairColor').value = char.hairColor;
+            document.getElementById('outfit').value = char.outfit;
+            document.getElementById('outfitColor1').value = char.outfitColor1;
+            document.getElementById('outfitColor2').value = char.outfitColor2;
+            document.getElementById('accessory').value = char.accessory;
+            document.getElementById('abilityName').value = char.abilityName || '';
+            document.getElementById('abilityDesc').value = char.abilityDesc || '';
+
+            // Stats
+            document.getElementById('statHp').value = char.stats.hp;
+            document.getElementById('statSpeed').value = char.stats.speed;
+            document.getElementById('statDamage').value = char.stats.damage;
+            document.getElementById('statDefense').value = char.stats.defense;
+            document.getElementById('hpValue').textContent = char.stats.hp + '%';
+            document.getElementById('speedValue').textContent = char.stats.speed + '%';
+            document.getElementById('damageValue').textContent = char.stats.damage + '%';
+            document.getElementById('defenseValue').textContent = char.stats.defense + '%';
+            document.getElementById('displayHp').textContent = char.stats.hp + '%';
+            document.getElementById('displaySpeed').textContent = char.stats.speed + '%';
+            document.getElementById('displayDamage').textContent = char.stats.damage + '%';
+            document.getElementById('displayDefense').textContent = char.stats.defense + '%';
+
+            // Preview elements
+            document.getElementById('previewName').textContent = char.name;
+            document.getElementById('classTag').textContent = char.className;
+            document.getElementById('bodyTag').textContent = char.body;
+
+            currentCharacter = { ...char };
+            localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCharacter));
+
+            // Load sprite if character has one
+            loadSpriteFromCharacter(char);
+
+            drawPreview();
+        }
+
+        // ==================== HALL OF HEROES ====================
+        function saveToHall() {
+            // Update character data before saving
+            updateCharacter();
+
+            // Check if already exists
+            const existingIndex = savedHeroes.findIndex(h => h.id === currentCharacter.id);
+            if (existingIndex >= 0) {
+                savedHeroes[existingIndex] = { ...currentCharacter };
+            } else {
+                if (savedHeroes.length >= 20) {
+                    showToast('Hall is full! Delete a hero first.');
+                    return;
+                }
+                savedHeroes.unshift({ ...currentCharacter });
+            }
+
+            localStorage.setItem(STORAGE_KEY_HEROES, JSON.stringify(savedHeroes));
+            renderHeroList();
+            showToast('Saved to Hall of Heroes');
+        }
+
+        function loadHero(id) {
+            const hero = savedHeroes.find(h => h.id === id);
+            if (hero) {
+                loadCharacterToForm(hero);
+                showToast('Loaded ' + hero.name);
+            }
+        }
+
+        function deleteHero(id, event) {
+            event.stopPropagation();
+            if (confirm('Remove this hero from the Hall?')) {
+                savedHeroes = savedHeroes.filter(h => h.id !== id);
+                localStorage.setItem(STORAGE_KEY_HEROES, JSON.stringify(savedHeroes));
+                renderHeroList();
+                showToast('Hero removed');
+            }
+        }
+
+        function renderHeroList() {
+            const container = document.getElementById('heroList');
+            const emptyState = document.getElementById('emptyHall');
+            document.getElementById('heroCount').textContent = savedHeroes.length + '/20';
+
+            if (savedHeroes.length === 0) {
+                container.innerHTML = '';
+                container.appendChild(emptyState);
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            container.innerHTML = savedHeroes.map(hero => `
+                <div onclick="loadHero('${hero.id}')"
+                    class="bg-slate-900/50 border ${currentCharacter.id === hero.id ? 'border-indigo-500 bg-indigo-500/5' : 'border-slate-800 hover:border-slate-600'} p-3 rounded-xl flex gap-3 cursor-pointer transition-all group relative">
+                    <div class="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 border border-slate-700 flex items-center justify-center pixelated" style="background: linear-gradient(135deg, ${hero.skinColor}40, ${hero.outfitColor1}40)">
+                        ${hero.spriteData
+                            ? `<img src="${hero.spriteData}" class="w-full h-full object-cover pixelated" style="object-position: 0 0;">`
+                            : `<span class="text-2xl">${getClassEmoji(hero.className)}</span>`
+                        }
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-sm truncate pr-6">${hero.name}</h4>
+                            <span class="text-[9px] text-slate-500">${new Date(hero.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[10px] text-indigo-400 font-bold uppercase">${hero.className}</span>
+                            <span class="text-[9px] text-slate-600">•</span>
+                            <span class="text-[9px] text-slate-500 uppercase">${hero.gender}</span>
+                        </div>
+                        <div class="flex gap-1">
+                            <span class="text-[8px] px-1 bg-slate-800 rounded text-slate-400">${hero.body}</span>
+                            <span class="text-[8px] px-1 bg-slate-800 rounded text-slate-400">${hero.hairStyle}</span>
+                        </div>
+                    </div>
+                    <button onclick="deleteHero('${hero.id}', event)"
+                        class="absolute top-2 right-2 p-1.5 bg-slate-950/80 hover:bg-red-900/80 text-slate-500 hover:text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function getClassEmoji(className) {
+            const emojis = {
+                'Warrior': '⚔️',
+                'Mage': '🔮',
+                'Rogue': '🗡️',
+                'Paladin': '🛡️',
+                'Necromancer': '💀',
+                'Engineer': '⚙️',
+                'Sniper': '🎯',
+                'Alchemist': '⚗️'
+            };
+            return emojis[className] || '👤';
+        }
+
+        // ==================== EXPORT FUNCTIONS ====================
+        function exportCharacter() {
+            const dataStr = JSON.stringify(currentCharacter, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `character-${currentCharacter.name.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast('Character exported');
+        }
+
+        function exportAllHeroes() {
+            const dataStr = JSON.stringify(savedHeroes, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `character-forge-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast('All heroes exported');
+        }
+
+        function importHeroes(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        savedHeroes = imported.slice(0, 20);
+                    } else {
+                        savedHeroes.unshift(imported);
+                        savedHeroes = savedHeroes.slice(0, 20);
+                    }
+                    localStorage.setItem(STORAGE_KEY_HEROES, JSON.stringify(savedHeroes));
+                    renderHeroList();
+                    showToast('Heroes imported');
+                } catch (err) {
+                    showToast('Invalid file format');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function pushToGame() {
+            const gameKey = document.getElementById('targetGame').value;
+            const config = GAME_CONFIGS[gameKey];
+
+            // Create export canvas
+            const exportCanvas = document.createElement('canvas');
+            const size = config.frameSize * config.outputCols;
+            exportCanvas.width = size;
+            exportCanvas.height = config.frameSize * config.outputRows;
+            const exportCtx = exportCanvas.getContext('2d');
+
+            if (importedSprite.image) {
+                // Use imported sprite - remap animations to game format
+                Object.entries(config.animations).forEach(([animName, animConfig]) => {
+                    const sourceRow = Math.min(animConfig.sourceRow, importedSprite.rows - 1);
+                    for (let col = 0; col < config.outputCols; col++) {
+                        const sourceCol = col % importedSprite.cols;
+                        const sx = sourceCol * importedSprite.frameWidth;
+                        const sy = sourceRow * importedSprite.frameHeight;
+                        const dx = col * config.frameSize;
+                        const dy = animConfig.targetRow * config.frameSize;
+
+                        exportCtx.drawImage(
+                            importedSprite.image,
+                            sx, sy, importedSprite.frameWidth, importedSprite.frameHeight,
+                            dx, dy, config.frameSize, config.frameSize
+                        );
+                    }
+                });
+            } else {
+                // Draw placeholder frames for each animation row
+                Object.entries(config.animations).forEach(([animName, animConfig]) => {
+                    for (let col = 0; col < config.outputCols; col++) {
+                        const x = col * config.frameSize;
+                        const y = animConfig.targetRow * config.frameSize;
+                        drawPlaceholderFrame(exportCtx, x, y, config.frameSize, animConfig.sourceRow, col);
+                    }
+                });
+            }
+
+            const canvas = exportCanvas;
+            const ctx = exportCtx;
+
+            // Download sprite sheet
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${currentCharacter.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${gameKey}.png`;
+                link.click();
+                URL.revokeObjectURL(url);
+            });
+
+            // Also download config
+            const spriteConfig = {
+                character: currentCharacter.name,
+                game: config.name,
+                frameWidth: config.frameSize,
+                frameHeight: config.frameSize,
+                scale: 0.25,
+                animations: {}
+            };
+
+            Object.entries(config.animations).forEach(([animName, animConfig]) => {
+                spriteConfig.animations[animName] = {
+                    row: animConfig.targetRow,
+                    frames: config.outputCols,
+                    speed: 0.12
+                };
+            });
+
+            const configBlob = new Blob([JSON.stringify(spriteConfig, null, 2)], { type: 'application/json' });
+            const configUrl = URL.createObjectURL(configBlob);
+            const configLink = document.createElement('a');
+            configLink.href = configUrl;
+            configLink.download = `${currentCharacter.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_config.json`;
+            setTimeout(() => {
+                configLink.click();
+                URL.revokeObjectURL(configUrl);
+            }, 100);
+
+            showToast(`Exported for ${config.name}`);
+        }
+
+        // ==================== CANVAS RENDERING ====================
+        const canvas = document.getElementById('previewCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function drawPreview() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (viewMode === 'grid') {
+                drawGridView();
+            } else {
+                drawAnimatedFrame();
+            }
+        }
+
+        function drawGridView() {
+            if (importedSprite.image) {
+                // Draw imported sprite grid
+                const cols = importedSprite.cols;
+                const rows = importedSprite.rows;
+                const displayFrameW = canvas.width / cols;
+                const displayFrameH = canvas.height / rows;
+
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < cols; col++) {
+                        const sx = col * importedSprite.frameWidth;
+                        const sy = row * importedSprite.frameHeight;
+                        const dx = col * displayFrameW;
+                        const dy = row * displayFrameH;
+
+                        ctx.drawImage(
+                            importedSprite.image,
+                            sx, sy, importedSprite.frameWidth, importedSprite.frameHeight,
+                            dx, dy, displayFrameW, displayFrameH
+                        );
+                    }
+                }
+            } else {
+                // Draw placeholder grid
+                const frameSize = 85;
+                const cols = 4;
+                const rows = 6;
+
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < cols; col++) {
+                        const x = col * (canvas.width / cols);
+                        const y = row * (canvas.height / rows);
+                        drawPlaceholderFrame(ctx, x, y, canvas.width / cols, row, col);
+                    }
+                }
+            }
+        }
+
+        function drawAnimatedFrame() {
+            if (importedSprite.image) {
+                // Draw imported sprite frame
+                const col = currentFrame % importedSprite.cols;
+                const row = Math.min(animationRow, importedSprite.rows - 1);
+
+                const sx = col * importedSprite.frameWidth;
+                const sy = row * importedSprite.frameHeight;
+
+                // Calculate display size (fit in canvas with some padding)
+                const maxSize = 400;
+                const scale = Math.min(maxSize / importedSprite.frameWidth, maxSize / importedSprite.frameHeight);
+                const displayW = importedSprite.frameWidth * scale;
+                const displayH = importedSprite.frameHeight * scale;
+                const dx = (canvas.width - displayW) / 2;
+                const dy = (canvas.height - displayH) / 2;
+
+                ctx.drawImage(
+                    importedSprite.image,
+                    sx, sy, importedSprite.frameWidth, importedSprite.frameHeight,
+                    dx, dy, displayW, displayH
+                );
+            } else {
+                // Draw placeholder frame
+                const frameSize = 384;
+                const x = (canvas.width - frameSize) / 2;
+                const y = (canvas.height - frameSize) / 2;
+                drawPlaceholderFrame(ctx, x, y, frameSize, animationRow, currentFrame);
+            }
+        }
+
+        function drawPlaceholderFrame(ctx, x, y, size, row, frame) {
+            // Draw placeholder character using current colors
+            const centerX = x + size / 2;
+            const centerY = y + size / 2;
+            const scale = size / 256;
+
+            // Animation offset based on frame
+            const bounceOffset = Math.sin(frame * Math.PI / 2) * 3 * scale;
+            const walkOffset = frame * 2 * scale;
+
+            ctx.save();
+
+            // Body
+            ctx.fillStyle = currentCharacter.skinColor;
+            const bodyWidth = getBodyWidth(currentCharacter.body) * scale;
+            const bodyHeight = 60 * scale;
+
+            // Legs (animated for walk)
+            if (row === 1) { // Walk animation
+                ctx.fillRect(centerX - 15 * scale + walkOffset, centerY + 20 * scale, 12 * scale, 40 * scale);
+                ctx.fillRect(centerX + 3 * scale - walkOffset, centerY + 20 * scale, 12 * scale, 40 * scale);
+            } else {
+                ctx.fillRect(centerX - 15 * scale, centerY + 20 * scale, 12 * scale, 40 * scale);
+                ctx.fillRect(centerX + 3 * scale, centerY + 20 * scale, 12 * scale, 40 * scale);
+            }
+
+            // Body/Outfit
+            ctx.fillStyle = currentCharacter.outfitColor1;
+            ctx.fillRect(centerX - bodyWidth / 2, centerY - 30 * scale - bounceOffset, bodyWidth, bodyHeight);
+
+            // Secondary color detail
+            ctx.fillStyle = currentCharacter.outfitColor2;
+            ctx.fillRect(centerX - bodyWidth / 2 + 5 * scale, centerY - 20 * scale - bounceOffset, bodyWidth - 10 * scale, 20 * scale);
+
+            // Head
+            ctx.fillStyle = currentCharacter.skinColor;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY - 50 * scale - bounceOffset, 25 * scale, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Hair
+            if (currentCharacter.hairStyle !== 'bald') {
+                ctx.fillStyle = currentCharacter.hairColor;
+                drawHair(ctx, centerX, centerY - 50 * scale - bounceOffset, 25 * scale, currentCharacter.hairStyle);
+            }
+
+            // Arms (animated for attack)
+            ctx.fillStyle = currentCharacter.skinColor;
+            if (row === 2 || row === 3) { // Attack animations
+                const armAngle = frame * 0.5;
+                ctx.save();
+                ctx.translate(centerX + bodyWidth / 2, centerY - 15 * scale - bounceOffset);
+                ctx.rotate(armAngle - 0.5);
+                ctx.fillRect(0, -5 * scale, 35 * scale, 10 * scale);
+                ctx.restore();
+            } else {
+                ctx.fillRect(centerX - bodyWidth / 2 - 10 * scale, centerY - 20 * scale - bounceOffset, 10 * scale, 35 * scale);
+                ctx.fillRect(centerX + bodyWidth / 2, centerY - 20 * scale - bounceOffset, 10 * scale, 35 * scale);
+            }
+
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(centerX - 8 * scale, centerY - 52 * scale - bounceOffset, 3 * scale, 0, Math.PI * 2);
+            ctx.arc(centerX + 8 * scale, centerY - 52 * scale - bounceOffset, 3 * scale, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Accessory
+            if (currentCharacter.accessory !== 'none') {
+                drawAccessory(ctx, centerX, centerY - bounceOffset, scale, currentCharacter.accessory);
+            }
+
+            // Hurt effect
+            if (row === 4) {
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+                ctx.fillRect(x, y, size, size);
+            }
+
+            // Special effect
+            if (row === 5) {
+                ctx.strokeStyle = currentCharacter.outfitColor1;
+                ctx.lineWidth = 3 * scale;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY - 20 * scale, 50 * scale + frame * 5 * scale, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        function getBodyWidth(bodyType) {
+            const widths = {
+                'athletic': 45,
+                'slim': 35,
+                'bulky': 55,
+                'petite': 30
+            };
+            return widths[bodyType] || 45;
+        }
+
+        function drawHair(ctx, x, y, headRadius, style) {
+            ctx.save();
+            switch (style) {
+                case 'short':
+                    ctx.beginPath();
+                    ctx.arc(x, y - headRadius * 0.3, headRadius * 1.1, Math.PI, 0);
+                    ctx.fill();
+                    break;
+                case 'long':
+                    ctx.beginPath();
+                    ctx.arc(x, y - headRadius * 0.2, headRadius * 1.15, Math.PI, 0);
+                    ctx.fill();
+                    ctx.fillRect(x - headRadius * 1.1, y, headRadius * 0.4, headRadius * 2);
+                    ctx.fillRect(x + headRadius * 0.7, y, headRadius * 0.4, headRadius * 2);
+                    break;
+                case 'spiky':
+                    for (let i = 0; i < 5; i++) {
+                        const angle = Math.PI + (i - 2) * 0.4;
+                        const tipX = x + Math.cos(angle) * headRadius * 1.5;
+                        const tipY = y + Math.sin(angle) * headRadius * 1.5;
+                        ctx.beginPath();
+                        ctx.moveTo(x + Math.cos(angle - 0.2) * headRadius, y + Math.sin(angle - 0.2) * headRadius);
+                        ctx.lineTo(tipX, tipY);
+                        ctx.lineTo(x + Math.cos(angle + 0.2) * headRadius, y + Math.sin(angle + 0.2) * headRadius);
+                        ctx.fill();
+                    }
+                    break;
+                case 'ponytail':
+                    ctx.beginPath();
+                    ctx.arc(x, y - headRadius * 0.3, headRadius * 1.1, Math.PI, 0);
+                    ctx.fill();
+                    ctx.fillRect(x - headRadius * 0.2, y + headRadius * 0.5, headRadius * 0.4, headRadius * 1.5);
+                    break;
+                case 'hooded':
+                    ctx.beginPath();
+                    ctx.arc(x, y, headRadius * 1.4, Math.PI * 0.8, Math.PI * 0.2);
+                    ctx.lineTo(x + headRadius * 0.8, y + headRadius);
+                    ctx.lineTo(x - headRadius * 0.8, y + headRadius);
+                    ctx.fill();
+                    break;
+            }
+            ctx.restore();
+        }
+
+        function drawAccessory(ctx, x, y, scale, accessory) {
+            ctx.save();
+            switch (accessory) {
+                case 'cape':
+                    ctx.fillStyle = currentCharacter.outfitColor1;
+                    ctx.beginPath();
+                    ctx.moveTo(x - 25 * scale, y - 25 * scale);
+                    ctx.lineTo(x - 35 * scale, y + 60 * scale);
+                    ctx.lineTo(x + 35 * scale, y + 60 * scale);
+                    ctx.lineTo(x + 25 * scale, y - 25 * scale);
+                    ctx.fill();
+                    break;
+                case 'helmet':
+                    ctx.fillStyle = '#888';
+                    ctx.beginPath();
+                    ctx.arc(x, y - 50 * scale, 30 * scale, Math.PI, 0);
+                    ctx.fill();
+                    ctx.fillRect(x - 3 * scale, y - 80 * scale, 6 * scale, 20 * scale);
+                    break;
+                case 'aura':
+                    ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
+                    ctx.lineWidth = 4 * scale;
+                    ctx.beginPath();
+                    ctx.arc(x, y - 20 * scale, 70 * scale, 0, Math.PI * 2);
+                    ctx.stroke();
+                    break;
+                case 'eyepatch':
+                    ctx.fillStyle = '#222';
+                    ctx.fillRect(x + 2 * scale, y - 55 * scale, 15 * scale, 8 * scale);
+                    ctx.strokeStyle = '#222';
+                    ctx.lineWidth = 2 * scale;
+                    ctx.beginPath();
+                    ctx.moveTo(x + 10 * scale, y - 50 * scale);
+                    ctx.lineTo(x + 30 * scale, y - 60 * scale);
+                    ctx.stroke();
+                    break;
+                case 'shoulder_armor':
+                    ctx.fillStyle = '#666';
+                    ctx.beginPath();
+                    ctx.arc(x - 35 * scale, y - 20 * scale, 15 * scale, 0, Math.PI * 2);
+                    ctx.arc(x + 35 * scale, y - 20 * scale, 15 * scale, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+            }
+            ctx.restore();
+        }
+
+        // ==================== SPRITE IMPORT ====================
+        function importSprite(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    importedSprite.image = img;
+                    importedSprite.dataUrl = e.target.result;
+                    importedSprite.frameWidth = Math.floor(img.width / importedSprite.cols);
+                    importedSprite.frameHeight = Math.floor(img.height / importedSprite.rows);
+
+                    // Update UI
+                    document.getElementById('spriteIndicator').className = 'w-2 h-2 rounded-full bg-emerald-500';
+                    document.getElementById('spriteStatusText').textContent = `Sprite loaded (${img.width}x${img.height})`;
+                    document.getElementById('clearSpriteBtn').classList.remove('hidden');
+                    document.getElementById('spriteConfig').classList.remove('hidden');
+                    document.getElementById('spriteInfo').textContent = `Frame size: ${importedSprite.frameWidth}x${importedSprite.frameHeight}`;
+                    document.getElementById('assetsStatus').textContent = 'Assets: Custom Sprite';
+
+                    // Save to character
+                    currentCharacter.spriteData = e.target.result;
+                    currentCharacter.spriteCols = importedSprite.cols;
+                    currentCharacter.spriteRows = importedSprite.rows;
+                    localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCharacter));
+
+                    drawPreview();
+                    showToast('Sprite imported successfully');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function clearImportedSprite() {
+            importedSprite.image = null;
+            importedSprite.dataUrl = null;
+            importedSprite.frameWidth = 0;
+            importedSprite.frameHeight = 0;
+
+            // Update UI
+            document.getElementById('spriteIndicator').className = 'w-2 h-2 rounded-full bg-slate-500';
+            document.getElementById('spriteStatusText').textContent = 'No sprite imported';
+            document.getElementById('clearSpriteBtn').classList.add('hidden');
+            document.getElementById('spriteConfig').classList.add('hidden');
+            document.getElementById('assetsStatus').textContent = 'Assets: Placeholder Mode';
+
+            // Clear from character
+            delete currentCharacter.spriteData;
+            delete currentCharacter.spriteCols;
+            delete currentCharacter.spriteRows;
+            localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCharacter));
+
+            drawPreview();
+            showToast('Sprite cleared');
+        }
+
+        function updateSpriteConfig() {
+            importedSprite.cols = parseInt(document.getElementById('spriteCols').value) || 4;
+            importedSprite.rows = parseInt(document.getElementById('spriteRows').value) || 4;
+
+            if (importedSprite.image) {
+                importedSprite.frameWidth = Math.floor(importedSprite.image.width / importedSprite.cols);
+                importedSprite.frameHeight = Math.floor(importedSprite.image.height / importedSprite.rows);
+                document.getElementById('spriteInfo').textContent = `Frame size: ${importedSprite.frameWidth}x${importedSprite.frameHeight}`;
+
+                // Save to character
+                currentCharacter.spriteCols = importedSprite.cols;
+                currentCharacter.spriteRows = importedSprite.rows;
+                localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCharacter));
+
+                drawPreview();
+            }
+        }
+
+        function loadSpriteFromCharacter(char) {
+            if (char.spriteData) {
+                const img = new Image();
+                img.onload = () => {
+                    importedSprite.image = img;
+                    importedSprite.dataUrl = char.spriteData;
+                    importedSprite.cols = char.spriteCols || 4;
+                    importedSprite.rows = char.spriteRows || 4;
+                    importedSprite.frameWidth = Math.floor(img.width / importedSprite.cols);
+                    importedSprite.frameHeight = Math.floor(img.height / importedSprite.rows);
+
+                    // Update UI
+                    document.getElementById('spriteIndicator').className = 'w-2 h-2 rounded-full bg-emerald-500';
+                    document.getElementById('spriteStatusText').textContent = `Sprite loaded (${img.width}x${img.height})`;
+                    document.getElementById('clearSpriteBtn').classList.remove('hidden');
+                    document.getElementById('spriteConfig').classList.remove('hidden');
+                    document.getElementById('spriteCols').value = importedSprite.cols;
+                    document.getElementById('spriteRows').value = importedSprite.rows;
+                    document.getElementById('spriteInfo').textContent = `Frame size: ${importedSprite.frameWidth}x${importedSprite.frameHeight}`;
+                    document.getElementById('assetsStatus').textContent = 'Assets: Custom Sprite';
+
+                    drawPreview();
+                };
+                img.src = char.spriteData;
+            } else {
+                // Clear sprite UI if character has no sprite
+                importedSprite.image = null;
+                importedSprite.dataUrl = null;
+                document.getElementById('spriteIndicator').className = 'w-2 h-2 rounded-full bg-slate-500';
+                document.getElementById('spriteStatusText').textContent = 'No sprite imported';
+                document.getElementById('clearSpriteBtn').classList.add('hidden');
+                document.getElementById('spriteConfig').classList.add('hidden');
+                document.getElementById('assetsStatus').textContent = 'Assets: Placeholder Mode';
+            }
+        }
+
+        // ==================== ANIMATION ====================
+        function toggleViewMode(mode) {
+            viewMode = mode;
+            document.getElementById('btnAnimate').className = mode === 'animate'
+                ? 'px-3 py-1 rounded-lg text-[10px] font-bold border bg-indigo-600 border-indigo-500 text-white'
+                : 'px-3 py-1 rounded-lg text-[10px] font-bold border bg-slate-800 border-slate-700 text-slate-400 hover:text-white';
+            document.getElementById('btnGrid').className = mode === 'grid'
+                ? 'px-3 py-1 rounded-lg text-[10px] font-bold border bg-indigo-600 border-indigo-500 text-white'
+                : 'px-3 py-1 rounded-lg text-[10px] font-bold border bg-slate-800 border-slate-700 text-slate-400 hover:text-white';
+            document.getElementById('animControls').style.display = mode === 'animate' ? 'flex' : 'none';
+            drawPreview();
+        }
+
+        function setAnimationRow() {
+            animationRow = parseInt(document.getElementById('animRow').value);
+            currentFrame = 0;
+        }
+
+        function setFps() {
+            fps = parseInt(document.getElementById('fpsSlider').value);
+            document.getElementById('fpsValue').textContent = fps;
+            startAnimation();
+        }
+
+        function startAnimation() {
+            if (animationTimer) clearInterval(animationTimer);
+            animationTimer = setInterval(() => {
+                currentFrame = (currentFrame + 1) % 4;
+                if (viewMode === 'animate') {
+                    drawPreview();
+                }
+            }, 1000 / fps);
+        }
+
+        // ==================== INITIALIZATION ====================
+        function init() {
+            // Load saved data
+            const savedCurrent = localStorage.getItem(STORAGE_KEY_CURRENT);
+            if (savedCurrent) {
+                try {
+                    currentCharacter = JSON.parse(savedCurrent);
+                    loadCharacterToForm(currentCharacter);
+                    // loadCharacterToForm already calls loadSpriteFromCharacter
+                } catch (e) {
+                    console.error('Failed to load current character:', e);
+                }
+            }
+
+            const savedHeroData = localStorage.getItem(STORAGE_KEY_HEROES);
+            if (savedHeroData) {
+                try {
+                    savedHeroes = JSON.parse(savedHeroData);
+                } catch (e) {
+                    console.error('Failed to load heroes:', e);
+                }
+            }
+
+            renderHeroList();
+            startAnimation();
+            drawPreview();
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>

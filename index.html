@@ -96,6 +96,25 @@
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none"></div>
 
+    <!-- API Key Modal -->
+    <div id="apiKeyModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <h3 class="text-lg font-bold text-white mb-2">🔑 Gemini API Key</h3>
+            <p class="text-sm text-slate-400 mb-4">Enter your API key to enable AI image generation. Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" class="text-indigo-400 hover:underline">aistudio.google.com</a></p>
+            <input type="password" id="apiKeyInput" placeholder="AIza..."
+                class="w-full bg-slate-800 border border-slate-600 text-white rounded-lg px-4 py-3 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <div class="flex gap-3">
+                <button onclick="saveApiKey()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-lg transition-colors">
+                    Save Key
+                </button>
+                <button onclick="hideApiKeyModal()" class="px-4 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 rounded-lg transition-colors">
+                    Cancel
+                </button>
+            </div>
+            <p id="apiKeyStatus" class="text-xs text-slate-500 mt-3 text-center"></p>
+        </div>
+    </div>
+
     <!-- Main App -->
     <div class="min-h-screen flex flex-col">
         <!-- Header -->
@@ -112,6 +131,9 @@
                 </div>
 
                 <div class="flex items-center gap-2 md:gap-4">
+                    <button onclick="showApiKeyModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-[10px] font-bold text-slate-200 transition-colors" title="Set API Key">
+                        🔑 API
+                    </button>
                     <button onclick="createNewCharacter()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-[10px] font-bold text-slate-200 transition-colors">
                         + NEW
                     </button>
@@ -531,14 +553,49 @@
         const STORAGE_KEY_API = 'forge_gemini_api_key';
 
         function getApiKey() {
-            let key = localStorage.getItem(STORAGE_KEY_API);
-            if (!key) {
-                key = prompt('Enter your Gemini API Key (get one free at aistudio.google.com):');
-                if (key) {
-                    localStorage.setItem(STORAGE_KEY_API, key);
-                }
+            return localStorage.getItem(STORAGE_KEY_API);
+        }
+
+        function showApiKeyModal() {
+            const modal = document.getElementById('apiKeyModal');
+            const input = document.getElementById('apiKeyInput');
+            const status = document.getElementById('apiKeyStatus');
+            const currentKey = getApiKey();
+
+            if (currentKey) {
+                input.value = currentKey;
+                status.textContent = '✓ API key is currently set';
+                status.className = 'text-xs text-green-400 mt-3 text-center';
+            } else {
+                input.value = '';
+                status.textContent = 'No API key set yet';
+                status.className = 'text-xs text-slate-500 mt-3 text-center';
             }
-            return key;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            input.focus();
+        }
+
+        function hideApiKeyModal() {
+            const modal = document.getElementById('apiKeyModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function saveApiKey() {
+            const input = document.getElementById('apiKeyInput');
+            const key = input.value.trim();
+
+            if (key) {
+                localStorage.setItem(STORAGE_KEY_API, key);
+                showToast('API key saved!');
+                hideApiKeyModal();
+            } else {
+                localStorage.removeItem(STORAGE_KEY_API);
+                showToast('API key cleared');
+                hideApiKeyModal();
+            }
         }
 
         let currentCharacter = {
@@ -1268,7 +1325,8 @@
         async function generateWithGemini() {
             const apiKey = getApiKey();
             if (!apiKey) {
-                showToast('API key required - refresh to try again');
+                showToast('Please set your API key first');
+                showApiKeyModal();
                 return;
             }
 

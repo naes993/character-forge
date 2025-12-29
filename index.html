@@ -205,6 +205,9 @@
                                 <option value="slim">Slim</option>
                                 <option value="bulky">Bulky</option>
                                 <option value="petite">Petite</option>
+                                <option value="monstrous">Monstrous</option>
+                                <option value="ethereal">Ethereal</option>
+                                <option value="robotic">Robotic</option>
                             </select>
                         </div>
 
@@ -289,11 +292,31 @@
                             <select id="accessory" onchange="updateCharacter()"
                                 class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 <option value="none">None</option>
-                                <option value="cape">Cape</option>
-                                <option value="helmet">Helmet</option>
-                                <option value="aura">Glowing Aura</option>
-                                <option value="eyepatch">Eye Patch</option>
-                                <option value="shoulder_armor">Shoulder Armor</option>
+                                <optgroup label="Helmets">
+                                    <option value="helmet_open">Open Face Helmet</option>
+                                    <option value="helmet_tvisor">T-Visor Helmet (Mandalorian style)</option>
+                                    <option value="helmet_full">Full Enclosed Helmet</option>
+                                    <option value="helmet_knight">Great Knight Helm</option>
+                                    <option value="helmet_spartan">Spartan Helmet with Plume</option>
+                                    <option value="helmet_viking">Viking Horned Helmet</option>
+                                    <option value="helmet_samurai">Samurai Kabuto</option>
+                                    <option value="helmet_skull">Skull-Faced Helmet</option>
+                                    <option value="helmet_cyber">Cybernetic Visor</option>
+                                </optgroup>
+                                <optgroup label="Headwear">
+                                    <option value="crown">Crown</option>
+                                    <option value="hood">Hood</option>
+                                    <option value="wizard_hat">Wizard Hat</option>
+                                    <option value="bandana">Bandana</option>
+                                </optgroup>
+                                <optgroup label="Other">
+                                    <option value="cape">Cape</option>
+                                    <option value="aura">Glowing Aura</option>
+                                    <option value="eyepatch">Eye Patch</option>
+                                    <option value="shoulder_armor">Shoulder Armor</option>
+                                    <option value="wings">Wings</option>
+                                    <option value="floating_orbs">Floating Orbs</option>
+                                </optgroup>
                             </select>
                         </div>
                     </div>
@@ -767,25 +790,28 @@
         function saveToHall() {
             updateCharacter();
 
-            // Save portrait data
-            if (portraitDataUrl) {
-                currentCharacter.portraitData = portraitDataUrl;
+            if (savedHeroes.length >= 20) {
+                showToast('Hall is full! Delete a hero first.');
+                return;
             }
 
-            const existingIndex = savedHeroes.findIndex(h => h.id === currentCharacter.id);
-            if (existingIndex >= 0) {
-                savedHeroes[existingIndex] = { ...currentCharacter };
-            } else {
-                if (savedHeroes.length >= 20) {
-                    showToast('Hall is full! Delete a hero first.');
-                    return;
-                }
-                savedHeroes.unshift({ ...currentCharacter });
+            // Create a new hero entry with a fresh ID (always adds, never overwrites)
+            const heroToSave = {
+                ...currentCharacter,
+                id: generateId(),  // New ID so each save creates a new entry
+                savedAt: Date.now()
+            };
+
+            // Save portrait data
+            if (portraitDataUrl) {
+                heroToSave.portraitData = portraitDataUrl;
             }
+
+            savedHeroes.unshift(heroToSave);
 
             localStorage.setItem(STORAGE_KEY_HEROES, JSON.stringify(savedHeroes));
             renderHeroList();
-            showToast('Saved to Hall of Heroes');
+            showToast('Added to Hall of Heroes (' + savedHeroes.length + '/20)');
         }
 
         function loadHero(id) {

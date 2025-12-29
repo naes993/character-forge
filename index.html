@@ -527,8 +527,19 @@
         const STORAGE_KEY_CURRENT = 'forge_current_character';
 
         // Gemini API configuration
-        const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
-        const GEMINI_API_KEY = 'AIzaSyCR2-1Mx1oKWFeHur2LyNwL2dArPFV-wGs';
+        const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent';
+        const STORAGE_KEY_API = 'forge_gemini_api_key';
+
+        function getApiKey() {
+            let key = localStorage.getItem(STORAGE_KEY_API);
+            if (!key) {
+                key = prompt('Enter your Gemini API Key (get one free at aistudio.google.com):');
+                if (key) {
+                    localStorage.setItem(STORAGE_KEY_API, key);
+                }
+            }
+            return key;
+        }
 
         let currentCharacter = {
             id: generateId(),
@@ -1255,9 +1266,9 @@
 
         // ==================== GEMINI AI ====================
         async function generateWithGemini() {
-            const apiKey = GEMINI_API_KEY;
+            const apiKey = getApiKey();
             if (!apiKey) {
-                showToast('API key not configured');
+                showToast('API key required - refresh to try again');
                 return;
             }
 

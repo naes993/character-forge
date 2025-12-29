@@ -973,57 +973,89 @@
             // Calculate animation transforms
             const transforms = getAnimationTransforms();
 
-            ctx.save();
-
-            // Apply transforms based on animation type
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.translate(transforms.offsetX, transforms.offsetY);
-            ctx.scale(transforms.scaleX, transforms.scaleY);
-            ctx.rotate(transforms.rotation);
-            ctx.translate(-canvas.width / 2, -canvas.height / 2);
-
             if (portraitImage) {
-                // Draw imported portrait with animation
-                const maxSize = 400;
+                // Calculate display size
+                const maxSize = 350;
                 const scale = Math.min(maxSize / portraitImage.width, maxSize / portraitImage.height);
                 const displayW = portraitImage.width * scale;
                 const displayH = portraitImage.height * scale;
-                const dx = (canvas.width - displayW) / 2;
-                const dy = (canvas.height - displayH) / 2;
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
 
-                // Apply effects based on animation
-                if (transforms.flash) {
-                    ctx.fillStyle = transforms.flashColor;
-                    ctx.globalAlpha = transforms.flashAlpha;
-                    ctx.fillRect(dx, dy, displayW, displayH);
-                    ctx.globalAlpha = 1;
-                }
+                // Skeletal animation: split sprite at 65% (upper body vs legs)
+                const splitRatio = 0.65;
+                const srcSplitY = portraitImage.height * splitRatio;
+                const destSplitY = displayH * splitRatio;
 
-                ctx.drawImage(portraitImage, dx, dy, displayW, displayH);
+                ctx.save();
 
-                // Glow effect
+                // Apply glow effect if active
                 if (transforms.glow) {
                     ctx.shadowColor = transforms.glowColor;
                     ctx.shadowBlur = transforms.glowSize;
-                    ctx.drawImage(portraitImage, dx, dy, displayW, displayH);
-                    ctx.shadowBlur = 0;
                 }
+
+                // Apply flash overlay
+                if (transforms.flash) {
+                    ctx.globalAlpha = 1 - transforms.flashAlpha * 0.5;
+                }
+
+                // DRAW UPPER BODY (with bob animation)
+                ctx.save();
+                ctx.translate(centerX, centerY - displayH / 2 + transforms.bobY);
+
+                // Draw upper body portion
+                ctx.drawImage(
+                    portraitImage,
+                    0, 0, portraitImage.width, srcSplitY,  // Source: top 65%
+                    -displayW / 2, 0, displayW, destSplitY  // Dest: positioned
+                );
+                ctx.restore();
+
+                // DRAW LEGS (with shear animation for walking)
+                ctx.save();
+                ctx.translate(centerX, centerY - displayH / 2 + destSplitY + transforms.bobY);
+
+                // Apply shear transform for leg animation
+                ctx.transform(1, 0, transforms.legShear, 1, 0, 0);
+
+                // Draw legs portion
+                ctx.drawImage(
+                    portraitImage,
+                    0, srcSplitY, portraitImage.width, portraitImage.height - srcSplitY,  // Source: bottom 35%
+                    -displayW / 2, 0, displayW, displayH - destSplitY  // Dest: positioned
+                );
+                ctx.restore();
+
+                // Flash overlay effect
+                if (transforms.flash) {
+                    ctx.globalAlpha = transforms.flashAlpha;
+                    ctx.fillStyle = transforms.flashColor;
+                    ctx.fillRect(centerX - displayW / 2, centerY - displayH / 2, displayW, displayH);
+                }
+
+                ctx.restore();
             } else {
                 // Draw placeholder character
+                ctx.save();
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.translate(transforms.offsetX, transforms.offsetY);
                 drawPlaceholderCharacter(ctx, transforms);
+                ctx.restore();
             }
-
-            ctx.restore();
         }
 
         function getAnimationTransforms() {
             const t = animationTime * animSpeed;
+            const speed = Date.now() / 50 * animSpeed; // Time-based for smooth animation
             const transforms = {
                 offsetX: 0,
                 offsetY: 0,
                 scaleX: 1,
                 scaleY: 1,
                 rotation: 0,
+                bobY: 0,        // Vertical bob for upper body
+                legShear: 0,    // Horizontal shear for legs (walking effect)
                 flash: false,
                 flashColor: '#ff0000',
                 flashAlpha: 0,
@@ -1034,43 +1066,40 @@
 
             switch (animationType) {
                 case 'idle':
-                    // Subtle breathing animation
-                    transforms.scaleY = 1 + Math.sin(t * 2) * 0.02;
-                    transforms.offsetY = Math.sin(t * 2) * 2;
+                    // Subtle breathing animation - gentle bob
+                    transforms.bobY = Math.sin(speed * 0.1) * 2;
                     break;
 
                 case 'walk':
-                    // Bobbing walk animation
-                    transforms.offsetY = Math.abs(Math.sin(t * 6)) * -12;
-                    transforms.offsetX = Math.sin(t * 3) * 3;
-                    transforms.rotation = Math.sin(t * 6) * 0.03;
+                    // Skeletal walk animation: bob + leg shear
+                    transforms.bobY = Math.abs(Math.sin(speed * 0.3)) * -8;
+                    transforms.legShear = Math.sin(speed * 0.3) * 0.4;
                     break;
 
                 case 'attack':
-                    // Shake/thrust animation
-                    const attackPhase = (t * 4) % (Math.PI * 2);
+                    // Quick thrust forward with leg plant
+                    const attackPhase = (speed * 0.2) % (Math.PI * 2);
+                    transforms.bobY = Math.sin(attackPhase * 2) * -5;
+                    transforms.legShear = Math.sin(attackPhase) * 0.2;
                     if (attackPhase < Math.PI) {
-                        transforms.offsetX = Math.sin(attackPhase * 3) * 15;
-                        transforms.scaleX = 1 + Math.sin(attackPhase) * 0.1;
+                        transforms.offsetX = Math.sin(attackPhase) * 20;
                     }
-                    transforms.rotation = Math.sin(t * 8) * 0.05;
                     break;
 
                 case 'hurt':
                     // Flash red and shake
                     transforms.flash = true;
-                    transforms.flashAlpha = Math.abs(Math.sin(t * 10)) * 0.4;
-                    transforms.offsetX = Math.sin(t * 20) * 8;
-                    transforms.offsetY = Math.sin(t * 15) * 4;
+                    transforms.flashAlpha = Math.abs(Math.sin(speed * 0.5)) * 0.5;
+                    transforms.bobY = Math.sin(speed * 0.8) * 4;
+                    transforms.legShear = Math.sin(speed * 0.6) * 0.15;
                     break;
 
                 case 'special':
-                    // Glowing pulse effect
+                    // Glowing pulse effect with float
                     transforms.glow = true;
-                    transforms.glowSize = 20 + Math.sin(t * 3) * 15;
-                    transforms.scaleX = 1 + Math.sin(t * 2) * 0.05;
-                    transforms.scaleY = 1 + Math.sin(t * 2) * 0.05;
-                    transforms.offsetY = Math.sin(t * 2) * -5;
+                    transforms.glowSize = 20 + Math.sin(speed * 0.15) * 15;
+                    transforms.bobY = Math.sin(speed * 0.1) * -10;  // Float up and down
+                    transforms.legShear = Math.sin(speed * 0.08) * 0.1;  // Subtle leg movement
                     break;
             }
 
@@ -1373,23 +1402,27 @@
                 }
 
                 if (imageData) {
+                    // Process image: remove white background
+                    text.textContent = 'Removing background...';
+                    const processedDataUrl = await removeBackground(imageData);
+
                     const img = new Image();
                     img.onload = () => {
                         portraitImage = img;
-                        portraitDataUrl = imageData;
+                        portraitDataUrl = processedDataUrl;
 
                         updatePortraitUI(true, img.width, img.height);
 
-                        currentCharacter.portraitData = imageData;
+                        currentCharacter.portraitData = processedDataUrl;
                         localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCharacter));
 
                         drawPreview();
-                        showToast('AI portrait generated!');
+                        showToast('AI sprite generated with transparent background!');
                     };
                     img.onerror = () => {
                         showToast('Failed to load generated image');
                     };
-                    img.src = imageData;
+                    img.src = processedDataUrl;
                 } else {
                     showToast('No image in response. Try again.');
                 }
@@ -1406,7 +1439,7 @@
         function buildPortraitPrompt() {
             const char = currentCharacter;
 
-            return `Create a single pixel art character portrait for a 2D game. Full body view, facing slightly to the right.
+            return `Generate a single 8-bit pixel art sprite of this character in a neutral ready stance (side view). Full body visible. Legs must be clearly defined and separated.
 
 CHARACTER DETAILS:
 - Name: ${char.name}
@@ -1421,16 +1454,97 @@ CHARACTER DETAILS:
 - Secondary Outfit Color: ${char.outfitColor2}
 - Accessory: ${char.accessory !== 'none' ? char.accessory : 'none'}
 
-STYLE REQUIREMENTS:
+CRITICAL STYLE REQUIREMENTS:
+- Centered on a solid WHITE (#FFFFFF) background
 - Pixel art style, 16-bit retro aesthetic like Vampire Survivors or Chrono Trigger
 - Single standing pose (NOT a sprite sheet - just ONE image)
-- Full body visible from head to feet
-- Dark/transparent background
-- Sharp, clean pixels with good contrast
-- Character should look ready for action
-- Make it visually interesting with details matching the ${char.className} class
+- Full body visible from head to feet with legs clearly visible
+- High contrast with thick black pixel-art outlines
+- No shadows on the background
+- No borders, no frames, no vignette
+- Do not generate a run pose
+- Do not generate multiple frames
 
-The image will be animated programmatically, so make it a clean static pose.`;
+The character will be animated programmatically by splitting upper body from legs.`;
+        }
+
+        // BFS Flood-fill background removal (from white to transparent)
+        async function removeBackground(dataUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = img.width;
+                    tempCanvas.height = img.height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(img, 0, 0);
+
+                    const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
+                    const data = imageData.data;
+                    const width = img.width;
+                    const height = img.height;
+                    const visited = new Set();
+
+                    // Get corner color as reference (should be white/near-white)
+                    const cornerIdx = 0;
+                    const cornerR = data[cornerIdx];
+                    const cornerG = data[cornerIdx + 1];
+                    const cornerB = data[cornerIdx + 2];
+
+                    // Check if pixel matches background (white or corner color)
+                    function isBackground(idx) {
+                        const r = data[idx];
+                        const g = data[idx + 1];
+                        const b = data[idx + 2];
+
+                        // Check against pure white
+                        const whiteThreshold = 120;
+                        if (r > 255 - whiteThreshold && g > 255 - whiteThreshold && b > 255 - whiteThreshold) {
+                            return true;
+                        }
+
+                        // Check against corner color
+                        const cornerThreshold = 150;
+                        const diff = Math.abs(r - cornerR) + Math.abs(g - cornerG) + Math.abs(b - cornerB);
+                        return diff < cornerThreshold;
+                    }
+
+                    // BFS flood fill from entry points
+                    function floodFill(startX, startY) {
+                        const queue = [[startX, startY]];
+
+                        while (queue.length > 0) {
+                            const [x, y] = queue.shift();
+                            const key = `${x},${y}`;
+
+                            if (x < 0 || x >= width || y < 0 || y >= height) continue;
+                            if (visited.has(key)) continue;
+
+                            const idx = (y * width + x) * 4;
+                            if (!isBackground(idx)) continue;
+
+                            visited.add(key);
+                            data[idx + 3] = 0; // Set alpha to 0 (transparent)
+
+                            // Add neighbors
+                            queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+                        }
+                    }
+
+                    // Start from 8 entry points (corners + edge midpoints)
+                    const entries = [
+                        [0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1],
+                        [Math.floor(width / 2), 0], [Math.floor(width / 2), height - 1],
+                        [0, Math.floor(height / 2)], [width - 1, Math.floor(height / 2)]
+                    ];
+
+                    entries.forEach(([x, y]) => floodFill(x, y));
+
+                    tempCtx.putImageData(imageData, 0, 0);
+                    resolve(tempCanvas.toDataURL('image/png'));
+                };
+                img.src = dataUrl;
+            });
         }
 
         // ==================== ANIMATION ====================
